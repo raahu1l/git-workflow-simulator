@@ -1,0 +1,11 @@
+{
+  "name": "git-workflow-simulator",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "echo \"Configure apps later\""
+  }
+}
