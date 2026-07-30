@@ -1,0 +1,14 @@
+{
+  "name": "@git-workflow-simulator/api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Backend API for Git Workflow Simulator",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
