@@ -19,7 +19,33 @@ const getSandbox = (sessionId) => {
   return sessions[sessionId];
 };
 
+const updateSandboxStatus = (sessionId, status) => {
+  const sandbox = sessions[sessionId];
+
+  if (!sandbox) {
+    return null;
+  }
+
+  sandbox.status = status;
+
+  return sandbox;
+};
+
+const deleteSandbox = (sessionId) => {
+  const sandbox = sessions[sessionId];
+
+  if (!sandbox) {
+    return null;
+  }
+
+  delete sessions[sessionId];
+
+  return sandbox;
+};
+
 module.exports = {
   createSandbox,
   getSandbox,
+  updateSandboxStatus,
+  deleteSandbox,
 };
