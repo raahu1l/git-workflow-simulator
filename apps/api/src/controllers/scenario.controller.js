@@ -1,11 +1,29 @@
-const { getAllScenarios } = require("../services/scenario.service");
+const {
+  getAllScenarios,
+  getScenarioById,
+} = require("../services/scenario.service");
 
-const getScenarios = (req, res) => {
+const listScenarios = (req, res) => {
   const scenarios = getAllScenarios();
 
   res.json(scenarios);
 };
 
+const getScenario = (req, res) => {
+  const { id } = req.params;
+
+  const scenario = getScenarioById(id);
+
+  if (!scenario) {
+    return res.status(404).json({
+      message: "Scenario not found",
+    });
+  }
+
+  res.json(scenario);
+};
+
 module.exports = {
-  getScenarios,
+  listScenarios,
+  getScenario,
 };

@@ -1,8 +1,13 @@
 const express = require("express");
-const { getScenarios } = require("../controllers/scenario.controller");
-
 const router = express.Router();
 
-router.get("/scenarios", getScenarios);
+const {
+  listScenarios,
+  getScenario,
+} = require("../controllers/scenario.controller");
+
+router.get("/scenarios", listScenarios);
+
+router.get("/scenarios/:id", getScenario);
 
 module.exports = router;
