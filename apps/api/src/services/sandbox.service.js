@@ -4,10 +4,23 @@ const { sessions } = require("../store/sessions");
 const createSandbox = (scenarioId) => {
   const sessionId = crypto.randomUUID();
 
+  const createdAt = new Date();
+
+  const expiresAt = new Date(
+    createdAt.getTime() + 30 * 60 * 1000
+  );
+
   const sandbox = {
     sessionId,
     scenarioId,
+
     status: "created",
+
+    createdAt: createdAt.toISOString(),
+
+    expiresAt: expiresAt.toISOString(),
+
+    containerId: null,
   };
 
   sessions[sessionId] = sandbox;
