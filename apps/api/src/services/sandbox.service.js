@@ -1,7 +1,7 @@
 const crypto = require("crypto");
 const { sessions } = require("../store/sessions");
 
-const createSandbox = (scenarioId) => {
+const createSandbox = (scenarioId, containerId) => {
   const sessionId = crypto.randomUUID();
 
   const createdAt = new Date();
@@ -13,14 +13,10 @@ const createSandbox = (scenarioId) => {
   const sandbox = {
     sessionId,
     scenarioId,
-
     status: "created",
-
     createdAt: createdAt.toISOString(),
-
     expiresAt: expiresAt.toISOString(),
-
-    containerId: null,
+    containerId,
   };
 
   sessions[sessionId] = sandbox;

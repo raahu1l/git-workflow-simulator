@@ -5,6 +5,7 @@ const {
 } = require("../services/scenario.service");
 
 const { createSandbox } = require("../services/sandbox.service");
+const { createContainer } = require("../services/docker.service");
 
 const listScenarios = (req, res) => {
   const scenarios = getAllScenarios();
@@ -26,7 +27,7 @@ const getScenario = (req, res) => {
   res.json(scenario);
 };
 
-const startScenarioById = (req, res) => {
+const startScenarioById = async (req, res) => {
   const { id } = req.params;
 
   const scenario = startScenario(id);
@@ -37,9 +38,22 @@ const startScenarioById = (req, res) => {
     });
   }
 
-  const sandbox = createSandbox(scenario.id);
+  try {
+    const containerId = await createContainer();
 
-  res.status(201).json(sandbox);
+    const sandbox = createSandbox(
+      scenario.id,
+      containerId
+    );
+
+    res.status(201).json(sandbox);
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      message: "Failed to create Docker container",
+    });
+  }
 };
 
 module.exports = {
