@@ -5,4 +5,4 @@ RUN apt-get update && \
 
 WORKDIR /workspace
 
-CMD ["bash"]
+CMD ["tail", "-f", "/dev/null"]
