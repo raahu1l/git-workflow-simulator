@@ -6,7 +6,7 @@ const scenariosPath = path.join(__dirname, "../../scenarios");
 const getAllScenarios = () => {
   const scenarioFolders = fs.readdirSync(scenariosPath);
 
-  const scenarios = scenarioFolders.map((folder) => {
+  return scenarioFolders.map((folder) => {
     const scenarioFile = path.join(
       scenariosPath,
       folder,
@@ -17,8 +17,6 @@ const getAllScenarios = () => {
 
     return JSON.parse(scenarioData);
   });
-
-  return scenarios;
 };
 
 const getScenarioById = (id) => {
@@ -37,7 +35,18 @@ const getScenarioById = (id) => {
   return JSON.parse(scenarioData);
 };
 
+const startScenario = (id) => {
+  const scenario = getScenarioById(id);
+
+  if (!scenario) {
+    return null;
+  }
+
+  return scenario;
+};
+
 module.exports = {
   getAllScenarios,
   getScenarioById,
+  startScenario,
 };
