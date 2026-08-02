@@ -8,7 +8,7 @@ const { createSandbox } = require("../services/sandbox.service");
 
 const {
   createContainer,
-  executeCommands,
+  runSetupScript,
 } = require("../services/docker.service");
 
 const listScenarios = (req, res) => {
@@ -45,16 +45,10 @@ const startScenarioById = async (req, res) => {
   try {
     const containerId = await createContainer();
 
-    const commands = [
-      "git init /workspace",
-      'git config --global user.name "Student"',
-      'git config --global user.email "student@example.com"',
-      "touch /workspace/README.md",
-      "git -C /workspace add .",
-      'git -C /workspace commit -m "Initial commit"',
-    ];
-
-    await executeCommands(containerId, commands);
+    await runSetupScript(
+      containerId,
+      scenario.id
+    );
 
     const sandbox = createSandbox(
       scenario.id,

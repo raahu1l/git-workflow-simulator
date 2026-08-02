@@ -1,14 +1,20 @@
 const { exec } = require("child_process");
+const path = require("path");
+
+const scenariosPath = path.resolve(__dirname, "../../scenarios");
 
 const createContainer = () => {
   return new Promise((resolve, reject) => {
-    exec("docker run -d git-sandbox", (error, stdout, stderr) => {
-      if (error) {
-        return reject(error);
-      }
+    exec(
+      `docker run -d -v "${scenariosPath}:/scenarios" git-sandbox`,
+      (error, stdout, stderr) => {
+        if (error) {
+          return reject(error);
+        }
 
-      resolve(stdout.trim());
-    });
+        resolve(stdout.trim());
+      }
+    );
   });
 };
 
@@ -33,8 +39,16 @@ const executeCommands = async (containerId, commands) => {
   }
 };
 
+const runSetupScript = (containerId, scenarioId) => {
+  return executeCommand(
+    containerId,
+    `bash /scenarios/${scenarioId}/setup.sh`
+  );
+};
+
 module.exports = {
   createContainer,
   executeCommand,
   executeCommands,
+  runSetupScript,
 };
