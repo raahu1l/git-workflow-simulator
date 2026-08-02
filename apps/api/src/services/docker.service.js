@@ -27,7 +27,14 @@ const executeCommand = (containerId, command) => {
   });
 };
 
+const executeCommands = async (containerId, commands) => {
+  for (const command of commands) {
+    await executeCommand(containerId, command);
+  }
+};
+
 module.exports = {
   createContainer,
   executeCommand,
+  executeCommands,
 };
