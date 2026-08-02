@@ -1,15 +1,11 @@
 const {
   getAllScenarios,
   getScenarioById,
-  startScenario,
 } = require("../services/scenario.service");
 
-const { createSandbox } = require("../services/sandbox.service");
-
 const {
-  createContainer,
-  runSetupScript,
-} = require("../services/docker.service");
+  startScenarioRunner,
+} = require("../services/scenario-runner.service");
 
 const listScenarios = (req, res) => {
   const scenarios = getAllScenarios();
@@ -32,28 +28,16 @@ const getScenario = (req, res) => {
 };
 
 const startScenarioById = async (req, res) => {
-  const { id } = req.params;
-
-  const scenario = startScenario(id);
-
-  if (!scenario) {
-    return res.status(404).json({
-      message: "Scenario not found",
-    });
-  }
-
   try {
-    const containerId = await createContainer();
-
-    await runSetupScript(
-      containerId,
-      scenario.id
+    const sandbox = await startScenarioRunner(
+      req.params.id
     );
 
-    const sandbox = createSandbox(
-      scenario.id,
-      containerId
-    );
+    if (!sandbox) {
+      return res.status(404).json({
+        message: "Scenario not found",
+      });
+    }
 
     res.status(201).json(sandbox);
   } catch (error) {
