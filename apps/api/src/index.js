@@ -3,6 +3,7 @@ const express = require("express");
 const healthRoutes = require("./routes/health.routes");
 const scenarioRoutes = require("./routes/scenario.routes");
 const sandboxRoutes = require("./routes/sandbox.routes");
+const sessionRoutes = require("./routes/session.routes");
 
 const app = express();
 
@@ -13,6 +14,7 @@ app.use(express.json());
 app.use("/api", healthRoutes);
 app.use("/api", scenarioRoutes);
 app.use("/api", sandboxRoutes);
+app.use("/api/sessions", sessionRoutes);
 
 const PORT = 5000;
 
