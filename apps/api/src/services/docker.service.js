@@ -1,4 +1,4 @@
-const { exec } = require("child_process");
+const { exec, spawn } = require("child_process");
 const path = require("path");
 
 const scenariosPath = path.resolve(__dirname, "../../scenarios");
@@ -46,9 +46,21 @@ const runSetupScript = (containerId, scenarioId) => {
   );
 };
 
+const startTerminal = (containerId) => {
+  const terminal = spawn("docker", [
+    "exec",
+    "-i",
+    containerId,
+    "bash",
+  ]);
+
+  return terminal;
+};
+
 module.exports = {
   createContainer,
   executeCommand,
   executeCommands,
   runSetupScript,
+  startTerminal,
 };
