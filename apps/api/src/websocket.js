@@ -11,7 +11,12 @@ const setupWebSocket = (server) => {
 
     let terminal = null;
 
-    ws.send("Connected to Git Workflow Simulator!\n");
+    ws.send(
+      JSON.stringify({
+        type: "info",
+        data: "Connected to Git Workflow Simulator!\r\n",
+      })
+    );
 
     ws.on("message", (message) => {
       try {
@@ -25,30 +30,57 @@ const setupWebSocket = (server) => {
           const sandbox = getSandbox(data.sessionId);
 
           if (!sandbox) {
-            ws.send("Session not found.\n");
+            ws.send(
+              JSON.stringify({
+                type: "error",
+                data: "Session not found.\r\n",
+              })
+            );
             return;
           }
 
           terminal = startTerminal(sandbox.containerId);
 
           terminal.stdout.on("data", (output) => {
-            ws.send(output.toString());
+            ws.send(
+              JSON.stringify({
+                type: "output",
+                data: output.toString(),
+              })
+            );
           });
 
           terminal.stderr.on("data", (output) => {
-            ws.send(output.toString());
+            ws.send(
+              JSON.stringify({
+                type: "output",
+                data: output.toString(),
+              })
+            );
           });
 
           terminal.on("error", (err) => {
-            console.error("Terminal error:", err);
-            ws.send("Terminal error.\n");
+            console.error(err);
+
+            ws.send(
+              JSON.stringify({
+                type: "error",
+                data: "Terminal error.\r\n",
+              })
+            );
           });
         }
 
         terminal.stdin.write(data.command + "\n");
       } catch (err) {
         console.error(err);
-        ws.send("Invalid message format.\n");
+
+        ws.send(
+          JSON.stringify({
+            type: "error",
+            data: "Invalid message format.\r\n",
+          })
+        );
       }
     });
 

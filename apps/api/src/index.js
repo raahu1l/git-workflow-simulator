@@ -1,5 +1,6 @@
 const express = require("express");
 const http = require("http");
+const cors = require("cors");
 
 const healthRoutes = require("./routes/health.routes");
 const scenarioRoutes = require("./routes/scenario.routes");
@@ -9,6 +10,12 @@ const sessionRoutes = require("./routes/session.routes");
 const { setupWebSocket } = require("./websocket");
 
 const app = express();
+
+app.use(
+  cors({
+    origin: "http://192.168.56.1:3000",
+  })
+);
 
 app.use(express.json());
 
