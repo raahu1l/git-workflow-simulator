@@ -2,6 +2,7 @@
   "id": "merge-conflict",
   "title": "Resolve a Merge Conflict",
   "difficulty": "Intermediate",
+  "category": "Branching-Collaboration",
   "description": "Resolve a merge conflict between two branches.",
   "estimatedTime": "15 min"
 }
