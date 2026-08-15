@@ -2,7 +2,7 @@
   "id": "first-commit",
   "title": "Create Your First Commit",
   "difficulty": "Beginner",
-  "category": "Git-Foundations",
+  "category": "git-foundations",
   "description": "Initialize a Git repository and create your first commit.",
   "estimatedTime": "5 min"
 }

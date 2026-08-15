@@ -6,31 +6,31 @@ type Scenario = {
   difficulty: string;
   description: string;
   estimatedTime: string;
-  category?: string;
+  category: string;
 };
 
 const categories = [
   {
-    slug: "foundations",
+    slug: "git-foundations",
     name: "Git Foundations",
     description: "Learn the fundamentals of everyday Git.",
     icon: "⌘",
   },
   {
-    slug: "branching",
+    slug: "branching-collaboration",
     name: "Branching & Collaboration",
     description: "Practice branches, merges, and collaboration.",
     icon: "⑂",
   },
   {
-    slug: "history",
+    slug: "history-recovery",
     name: "History & Recovery",
-    description: "Understand history and recover from mistakes.",
+    description: "Understand Git history and recover from mistakes.",
     icon: "↶",
   },
   {
-    slug: "advanced",
-    name: "Advanced Workflows",
+    slug: "advanced-workflows",
+    name: "Advanced Git Workflows",
     description: "Master powerful Git workflows.",
     icon: "◆",
   },
@@ -58,17 +58,17 @@ export default async function Home() {
       ====================================================== */}
 
       <nav className="border-b border-[#30363d]">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 sm:px-8">
+        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
 
           <a
             href="/"
-            className="flex items-center gap-3"
+            className="flex items-center gap-2.5"
           >
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#238636] text-sm font-bold">
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[#238636] text-xs font-bold">
               G
             </div>
 
-            <span className="text-sm font-semibold sm:text-base">
+            <span className="text-xs font-semibold sm:text-sm">
               Git Workflow Simulator
             </span>
           </a>
@@ -76,7 +76,7 @@ export default async function Home() {
           {/* Desktop / Tablet */}
           <a
             href="/browse"
-            className="hidden rounded-md px-3 py-2 text-sm text-[#8b949e] transition hover:bg-[#161b22] hover:text-white sm:block"
+            className="hidden rounded-md px-3 py-2 text-xs font-medium text-[#8b949e] transition hover:bg-[#161b22] hover:text-white sm:block"
           >
             Browse All
           </a>
@@ -85,7 +85,7 @@ export default async function Home() {
           <a
             href="/browse"
             aria-label="Browse all scenarios"
-            className="flex h-9 w-9 items-center justify-center rounded-md border border-[#30363d] text-[#8b949e] transition hover:bg-[#161b22] hover:text-white sm:hidden"
+            className="flex h-8 w-8 items-center justify-center rounded-md border border-[#30363d] text-sm text-[#8b949e] transition hover:bg-[#161b22] hover:text-white sm:hidden"
           >
             ☰
           </a>
@@ -99,81 +99,44 @@ export default async function Home() {
       ====================================================== */}
 
       <section className="border-b border-[#30363d]">
-        <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-20 lg:py-28">
+        <div className="mx-auto max-w-7xl px-5 py-12 text-center sm:px-8 sm:py-16 lg:px-8 lg:py-20">
 
-          {/* Mobile */}
-          <div className="block sm:hidden">
-            <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-[#58a6ff]">
-              Interactive Git Practice
-            </p>
+          <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#58a6ff] sm:text-xs">
+            Interactive Git Practice
+          </p>
 
-            <h1 className="text-4xl font-bold leading-[1.08] tracking-tight">
-              Learn Git by doing.
-            </h1>
+          <h1 className="text-3xl font-bold leading-tight tracking-tight sm:text-4xl lg:text-5xl">
+            Learn Git by doing.
+          </h1>
 
-            <p className="mt-5 text-sm leading-6 text-[#8b949e]">
-              Practice real Git workflows inside isolated terminal
-              environments.
-            </p>
-          </div>
-
-
-          {/* Tablet */}
-          <div className="hidden max-w-3xl sm:block lg:hidden">
-            <p className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-[#58a6ff]">
-              Interactive Git Practice
-            </p>
-
-            <h1 className="text-5xl font-bold leading-[1.08] tracking-tight">
-              Learn Git by actually using it.
-            </h1>
-
-            <p className="mt-6 max-w-2xl text-base leading-7 text-[#8b949e]">
-              Practice real Git workflows in isolated terminal
-              environments. Experiment, make mistakes, and learn by doing.
-            </p>
-          </div>
-
-
-          {/* Desktop */}
-          <div className="hidden max-w-4xl lg:block">
-            <p className="mb-5 text-sm font-semibold uppercase tracking-[0.2em] text-[#58a6ff]">
-              Interactive Git Practice
-            </p>
-
-            <h1 className="text-6xl font-bold leading-[1.05] tracking-tight">
-              Learn Git by actually using it.
-            </h1>
-
-            <p className="mt-7 max-w-2xl text-lg leading-8 text-[#8b949e]">
-              Practice real Git workflows inside isolated terminal
-              environments. Experiment, make mistakes, and build confidence
-              through hands-on practice.
-            </p>
-          </div>
+          <p className="mx-auto mt-4 max-w-2xl text-xs leading-5 text-[#8b949e] sm:text-sm sm:leading-6">
+            Practice real Git workflows inside isolated terminal
+            environments. Experiment, make mistakes, and build confidence
+            through hands-on practice.
+          </p>
 
         </div>
       </section>
 
 
       {/* =====================================================
-          MOBILE HOME
+          MOBILE
       ====================================================== */}
 
       <div className="block sm:hidden">
 
         {/* Featured */}
         {featured.length > 0 && (
-          <section className="border-b border-[#30363d] py-10">
+          <section className="border-b border-[#30363d] py-8">
 
             <div className="px-5">
               <SectionHeading
                 title="Featured"
-                description="A good place to start."
+                description="Start with these recommended scenarios."
               />
             </div>
 
-            <div className="flex gap-4 overflow-x-auto px-5 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="flex gap-3 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {featured.map((scenario) => (
                 <ScenarioCard
                   key={scenario.id}
@@ -189,16 +152,16 @@ export default async function Home() {
 
         {/* Recently Added */}
         {recentlyAdded.length > 0 && (
-          <section className="border-b border-[#30363d] py-10">
+          <section className="border-b border-[#30363d] py-8">
 
             <div className="px-5">
               <SectionHeading
                 title="Recently Added"
-                description="New scenarios to try."
+                description="Explore the latest scenarios."
               />
             </div>
 
-            <div className="flex gap-4 overflow-x-auto px-5 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="flex gap-3 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {recentlyAdded.map((scenario) => (
                 <ScenarioCard
                   key={scenario.id}
@@ -213,7 +176,7 @@ export default async function Home() {
 
 
         {/* Explore Git */}
-        <section className="px-5 py-10">
+        <section className="px-5 py-8">
 
           <SectionHeading
             title="Explore Git"
@@ -226,30 +189,30 @@ export default async function Home() {
               <a
                 key={category.slug}
                 href={`/browse/${category.slug}`}
-                className={`flex items-center gap-4 bg-[#161b22] px-4 py-4 transition hover:bg-[#21262d] ${
+                className={`flex items-center gap-3 bg-[#161b22] px-3.5 py-3.5 transition hover:bg-[#21262d] ${
                   index !== categories.length - 1
                     ? "border-b border-[#30363d]"
                     : ""
                 }`}
               >
 
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#30363d] bg-[#0d1117] text-sm text-[#58a6ff]">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[#30363d] bg-[#0d1117] text-xs text-[#58a6ff]">
                   {category.icon}
                 </div>
 
                 <div className="min-w-0 flex-1">
 
-                  <p className="text-sm font-semibold">
+                  <p className="text-xs font-semibold">
                     {category.name}
                   </p>
 
-                  <p className="mt-1 text-xs leading-5 text-[#8b949e]">
+                  <p className="mt-0.5 truncate text-[10px] leading-4 text-[#8b949e]">
                     {category.description}
                   </p>
 
                 </div>
 
-                <span className="text-[#8b949e]">
+                <span className="text-sm text-[#8b949e]">
                   →
                 </span>
 
@@ -262,7 +225,7 @@ export default async function Home() {
 
 
         {/* Mobile Footer */}
-        <footer className="border-t border-[#30363d] px-5 py-8 text-center text-xs text-[#8b949e]">
+        <footer className="border-t border-[#30363d] px-5 py-6 text-center text-[10px] text-[#8b949e]">
           Git Workflow Simulator · Open Source Git Practice
         </footer>
 
@@ -270,7 +233,7 @@ export default async function Home() {
 
 
       {/* =====================================================
-          TABLET HOME
+          TABLET
       ====================================================== */}
 
       <div className="hidden sm:block lg:hidden">
@@ -303,7 +266,7 @@ export default async function Home() {
 
               <SectionHeading
                 title="Recently Added"
-                description="The latest scenarios added to the library."
+                description="Explore the latest scenarios."
               />
 
               <div className="grid grid-cols-2 gap-5">
@@ -321,7 +284,7 @@ export default async function Home() {
         )}
 
 
-        {/* Categories */}
+        {/* Explore Git */}
         <section className="border-t border-[#30363d]">
 
           <div className="mx-auto max-w-5xl px-8 py-12">
@@ -337,24 +300,28 @@ export default async function Home() {
                 <a
                   key={category.slug}
                   href={`/browse/${category.slug}`}
-                  className="group rounded-xl border border-[#30363d] bg-[#161b22] p-5 transition hover:border-[#58a6ff]"
+                  className="group rounded-xl border border-[#30363d] bg-[#161b22] p-5 transition hover:border-[#58a6ff] hover:bg-[#1c2128]"
                 >
 
-                  <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg border border-[#30363d] bg-[#0d1117] text-[#58a6ff]">
-                    {category.icon}
+                  <div className="flex items-start justify-between">
+
+                    <div className="flex h-9 w-9 items-center justify-center rounded-md border border-[#30363d] bg-[#0d1117] text-[#58a6ff]">
+                      {category.icon}
+                    </div>
+
+                    <span className="text-base text-[#8b949e] transition group-hover:translate-x-1 group-hover:text-white">
+                      →
+                    </span>
+
                   </div>
 
-                  <h3 className="text-base font-semibold">
+                  <h3 className="mt-5 text-sm font-semibold">
                     {category.name}
                   </h3>
 
-                  <p className="mt-2 text-sm leading-6 text-[#8b949e]">
+                  <p className="mt-1.5 text-xs leading-5 text-[#8b949e]">
                     {category.description}
                   </p>
-
-                  <span className="mt-5 inline-block text-sm text-[#8b949e] transition group-hover:translate-x-1 group-hover:text-white">
-                    Explore →
-                  </span>
 
                 </a>
               ))}
@@ -374,20 +341,20 @@ export default async function Home() {
 
 
       {/* =====================================================
-          DESKTOP HOME
+          DESKTOP
       ====================================================== */}
 
       <div className="hidden lg:block">
 
         {/* Featured */}
-        <section className="mx-auto max-w-7xl px-8 py-16">
+        <section className="mx-auto max-w-7xl px-8 py-12">
 
           <SectionHeading
             title="Featured"
             description="Start with these recommended scenarios."
           />
 
-          <div className="grid grid-cols-3 gap-6">
+          <div className="grid grid-cols-3 gap-4">
             {featured.map((scenario) => (
               <ScenarioCard
                 key={scenario.id}
@@ -403,14 +370,14 @@ export default async function Home() {
         {recentlyAdded.length > 0 && (
           <section className="border-t border-[#30363d]">
 
-            <div className="mx-auto max-w-7xl px-8 py-16">
+            <div className="mx-auto max-w-7xl px-8 py-12">
 
               <SectionHeading
                 title="Recently Added"
-                description="The latest scenarios added to the library."
+                description="Explore the latest scenarios added to the library."
               />
 
-              <div className="grid grid-cols-3 gap-6">
+              <div className="grid grid-cols-3 gap-4">
                 {recentlyAdded.map((scenario) => (
                   <ScenarioCard
                     key={scenario.id}
@@ -425,28 +392,28 @@ export default async function Home() {
         )}
 
 
-        {/* Categories */}
+        {/* Explore Git */}
         <section className="border-t border-[#30363d]">
 
-          <div className="mx-auto max-w-7xl px-8 py-16">
+          <div className="mx-auto max-w-7xl px-8 py-12">
 
             <SectionHeading
               title="Explore Git"
               description="Choose an area and start practicing."
             />
 
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-2 gap-4">
 
               {categories.map((category) => (
                 <a
                   key={category.slug}
                   href={`/browse/${category.slug}`}
-                  className="group rounded-2xl border border-[#30363d] bg-[#161b22] p-7 transition hover:border-[#58a6ff] hover:bg-[#1c2128]"
+                  className="group relative overflow-hidden rounded-xl border border-[#30363d] bg-[#161b22] p-5 transition hover:border-[#58a6ff] hover:bg-[#1c2128]"
                 >
 
                   <div className="flex items-start justify-between">
 
-                    <div className="flex h-11 w-11 items-center justify-center rounded-lg border border-[#30363d] bg-[#0d1117] text-[#58a6ff]">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-md border border-[#30363d] bg-[#0d1117] text-[#58a6ff]">
                       {category.icon}
                     </div>
 
@@ -456,11 +423,11 @@ export default async function Home() {
 
                   </div>
 
-                  <h3 className="mt-6 text-xl font-semibold">
+                  <h3 className="mt-5 text-base font-semibold">
                     {category.name}
                   </h3>
 
-                  <p className="mt-2 max-w-md text-sm leading-6 text-[#8b949e]">
+                  <p className="mt-1.5 text-xs leading-5 text-[#8b949e]">
                     {category.description}
                   </p>
 
@@ -477,7 +444,7 @@ export default async function Home() {
         {/* Desktop Footer */}
         <footer className="border-t border-[#30363d]">
 
-          <div className="mx-auto max-w-7xl px-8 py-10 text-center text-sm text-[#8b949e]">
+          <div className="mx-auto max-w-7xl px-8 py-7 text-center text-xs text-[#8b949e]">
             Git Workflow Simulator · Open Source Git Practice
           </div>
 
@@ -498,13 +465,13 @@ function SectionHeading({
   description: string;
 }) {
   return (
-    <div className="mb-6">
+    <div className="mb-5">
 
-      <h2 className="text-xl font-bold sm:text-2xl">
+      <h2 className="text-lg font-bold sm:text-xl">
         {title}
       </h2>
 
-      <p className="mt-1 text-sm text-[#8b949e]">
+      <p className="mt-1 text-xs text-[#8b949e] sm:text-sm">
         {description}
       </p>
 
