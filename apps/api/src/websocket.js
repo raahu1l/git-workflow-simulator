@@ -18,78 +18,166 @@ const setupWebSocket = (server) => {
       })
     );
 
-    ws.on("message", (message) => {
-      try {
-        const data = JSON.parse(message);
+    /* =========================================
+       CREATE TERMINAL
+    ========================================== */
 
-        if (data.type !== "command") {
-          return;
-        }
+    const ensureTerminal = (sessionId) => {
+      if (terminal) {
+        return terminal;
+      }
 
-        if (!terminal) {
-          const sandbox = getSandbox(data.sessionId);
+      const sandbox = getSandbox(sessionId);
 
-          if (!sandbox) {
-            ws.send(
-              JSON.stringify({
-                type: "error",
-                data: "Session not found.\r\n",
-              })
-            );
-            return;
-          }
-
-          terminal = startTerminal(sandbox.containerId);
-
-          terminal.stdout.on("data", (output) => {
-            ws.send(
-              JSON.stringify({
-                type: "output",
-                data: output.toString(),
-              })
-            );
-          });
-
-          terminal.stderr.on("data", (output) => {
-            ws.send(
-              JSON.stringify({
-                type: "output",
-                data: output.toString(),
-              })
-            );
-          });
-
-          terminal.on("error", (err) => {
-            console.error(err);
-
-            ws.send(
-              JSON.stringify({
-                type: "error",
-                data: "Terminal error.\r\n",
-              })
-            );
-          });
-        }
-
-        terminal.stdin.write(data.command + "\n");
-      } catch (err) {
-        console.error(err);
-
+      if (!sandbox) {
         ws.send(
           JSON.stringify({
             type: "error",
-            data: "Invalid message format.\r\n",
+            data: "Session not found.\r\n",
           })
         );
+
+        return null;
+      }
+
+      terminal = startTerminal(sandbox.containerId);
+
+      /* =========================================
+         PTY OUTPUT → WEBSOCKET
+      ========================================== */
+
+      terminal.onData((output) => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(
+            JSON.stringify({
+              type: "output",
+              data: output,
+            })
+          );
+        }
+      });
+
+      /* =========================================
+         PTY EXIT
+      ========================================== */
+
+      terminal.onExit(({ exitCode }) => {
+        console.log(`Terminal exited with code ${exitCode}`);
+
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(
+            JSON.stringify({
+              type: "info",
+              data: `\r\nTerminal exited (${exitCode}).\r\n`,
+            })
+          );
+        }
+
+        terminal = null;
+      });
+
+      return terminal;
+    };
+
+    /* =========================================
+       WEBSOCKET MESSAGE
+    ========================================== */
+
+    ws.on("message", (message) => {
+      try {
+        const rawMessage = message.toString();
+
+        console.log("WebSocket message:", rawMessage);
+
+        const data = JSON.parse(rawMessage);
+
+        /* =====================================
+           RAW TERMINAL INPUT
+        ====================================== */
+
+        if (data.type === "input") {
+          if (typeof data.data !== "string") {
+            return;
+          }
+
+          const pty = ensureTerminal(data.sessionId);
+
+          if (!pty) {
+            return;
+          }
+
+          pty.write(data.data);
+
+          return;
+        }
+
+        /* =====================================
+           TERMINAL RESIZE
+        ====================================== */
+
+        if (data.type === "resize") {
+          const pty = ensureTerminal(data.sessionId);
+
+          if (!pty) {
+            return;
+          }
+
+          const cols = Number(data.cols);
+          const rows = Number(data.rows);
+
+          if (
+            Number.isInteger(cols) &&
+            Number.isInteger(rows) &&
+            cols > 0 &&
+            rows > 0
+          ) {
+            pty.resize(cols, rows);
+          }
+
+          return;
+        }
+
+        /* =====================================
+           UNKNOWN MESSAGE
+        ====================================== */
+
+        console.log(
+          "Unknown WebSocket message type:",
+          data.type
+        );
+
+      } catch (err) {
+        console.error("WebSocket message error:", err);
+
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(
+            JSON.stringify({
+              type: "error",
+              data: `Server error: ${err.message}\r\n`,
+            })
+          );
+        }
       }
     });
+
+    /* =========================================
+       CLIENT DISCONNECTED
+    ========================================== */
 
     ws.on("close", () => {
       console.log("Client disconnected");
 
       if (terminal) {
-        terminal.stdin.write("exit\n");
-        terminal.kill();
+        try {
+          terminal.kill();
+        } catch (error) {
+          console.error(
+            "Failed to kill terminal:",
+            error
+          );
+        }
+
+        terminal = null;
       }
     });
   });

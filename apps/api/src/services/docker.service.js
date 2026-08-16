@@ -1,4 +1,5 @@
-const { exec, spawn } = require("child_process");
+const { exec } = require("child_process");
+const pty = require("node-pty");
 const path = require("path");
 
 const scenariosPath = path.resolve(__dirname, "../../scenarios");
@@ -47,12 +48,24 @@ const runSetupScript = (containerId, scenarioId) => {
 };
 
 const startTerminal = (containerId) => {
-  const terminal = spawn("docker", [
-    "exec",
-    "-i",
-    containerId,
-    "bash",
-  ]);
+  const terminal = pty.spawn(
+    process.env.ComSpec || "C:\\Windows\\System32\\cmd.exe",
+    [
+      "/c",
+      "docker",
+      "exec",
+      "-it",
+      containerId,
+      "bash",
+    ],
+    {
+      name: "xterm-color",
+      cols: 120,
+      rows: 30,
+      cwd: process.cwd(),
+      env: process.env,
+    }
+  );
 
   return terminal;
 };
