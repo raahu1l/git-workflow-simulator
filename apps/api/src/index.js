@@ -11,11 +11,7 @@ const { setupWebSocket } = require("./websocket");
 
 const app = express();
 
-app.use(
-  cors({
-    origin: "http://192.168.56.1:3000",
-  })
-);
+app.use(cors());
 
 app.use(express.json());
 

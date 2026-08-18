@@ -2,7 +2,10 @@ const { exec } = require("child_process");
 const pty = require("node-pty");
 const path = require("path");
 
-const scenariosPath = path.resolve(__dirname, "../../scenarios");
+const scenariosPath = path.resolve(
+  __dirname,
+  "../../scenarios"
+);
 
 const createContainer = () => {
   return new Promise((resolve, reject) => {
@@ -21,8 +24,10 @@ const createContainer = () => {
 
 const executeCommand = (containerId, command) => {
   return new Promise((resolve, reject) => {
+    const escapedCommand = command.replace(/"/g, '\\"');
+
     exec(
-      `docker exec ${containerId} ${command}`,
+      `docker exec ${containerId} bash -c "${escapedCommand}"`,
       (error, stdout, stderr) => {
         if (error) {
           return reject(error);
@@ -34,13 +39,19 @@ const executeCommand = (containerId, command) => {
   });
 };
 
-const executeCommands = async (containerId, commands) => {
+const executeCommands = async (
+  containerId,
+  commands
+) => {
   for (const command of commands) {
     await executeCommand(containerId, command);
   }
 };
 
-const runSetupScript = (containerId, scenarioId) => {
+const runSetupScript = (
+  containerId,
+  scenarioId
+) => {
   return executeCommand(
     containerId,
     `bash /scenarios/${scenarioId}/setup.sh`
@@ -49,7 +60,8 @@ const runSetupScript = (containerId, scenarioId) => {
 
 const startTerminal = (containerId) => {
   const terminal = pty.spawn(
-    process.env.ComSpec || "C:\\Windows\\System32\\cmd.exe",
+    process.env.ComSpec ||
+      "C:\\Windows\\System32\\cmd.exe",
     [
       "/c",
       "docker",

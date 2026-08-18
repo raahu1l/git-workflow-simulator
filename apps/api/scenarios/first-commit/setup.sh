@@ -2,13 +2,11 @@
 
 cd /workspace
 
-git init
+git config --global user.name "Student"
+git config --global user.email "student@example.com"
 
-git config user.name "Student"
-git config user.email "student@example.com"
-
-echo "Repository initialized."
 echo "Your task:"
-echo "1. Create README.md"
-echo "2. Add it to Git"
-echo "3. Create your first commit"
+echo "1. Initialize a Git repository"
+echo "2. Create README.md"
+echo "3. Add it to Git"
+echo "4. Create your first commit"
