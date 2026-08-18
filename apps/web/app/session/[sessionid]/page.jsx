@@ -1,11 +1,343 @@
-import Terminal from "@/src/components/Terminal";
+"use client";
 
-export default async function SessionPage({ params }) {
-  const { sessionid } = await params;
-  const sessionId = sessionid;
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+
+import { useParams } from "next/navigation";
+
+import Terminal from "@/src/components/Terminal";
+import AlexTeammate from "@/src/components/alex/AlexTeammate";
+import SessionIntro from "@/src/components/SessionIntro";
+import TaskProgress from "@/src/components/TaskProgress";
+
+export default function SessionPage() {
+  const params = useParams();
+  const sessionId = params.sessionid;
+
+  const [scenario, setScenario] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const [validation, setValidation] = useState(null);
+  const [checking, setChecking] = useState(false);
+
+  /*
+   * Current Alex sidebar reaction.
+   *
+   * null = normal/neutral Alex
+   */
+  const [alexReaction, setAlexReaction] = useState(null);
+
+  /*
+   * Previous progress is kept in a ref so that
+   * progress changes don't cause unnecessary renders.
+   */
+  const previousProgressRef = useRef(null);
+
+  /*
+   * Used to automatically remove the reaction
+   * after a few seconds.
+   */
+  const reactionTimeoutRef = useRef(null);
+
+  /* =====================================================
+     LOAD SESSION → SCENARIO
+  ====================================================== */
+
+  useEffect(() => {
+    const loadScenario = async () => {
+      try {
+        const sessionResponse = await fetch(
+          `http://localhost:5000/api/sessions/${sessionId}`,
+          {
+            cache: "no-store",
+          }
+        );
+
+        if (!sessionResponse.ok) {
+          throw new Error("Failed to fetch session");
+        }
+
+        const sessionData =
+          await sessionResponse.json();
+
+        const scenarioResponse = await fetch(
+          `http://localhost:5000/api/scenarios/${sessionData.scenarioId}`,
+          {
+            cache: "no-store",
+          }
+        );
+
+        if (!scenarioResponse.ok) {
+          throw new Error("Failed to fetch scenario");
+        }
+
+        const scenarioData =
+          await scenarioResponse.json();
+
+        setScenario(scenarioData);
+      } catch (error) {
+        console.error(
+          "Failed to load scenario:",
+          error
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (sessionId) {
+      loadScenario();
+    }
+  }, [sessionId]);
+
+  /* =====================================================
+     PROGRESS → ALEX REACTION
+  ====================================================== */
+
+  const handleProgressChange = useCallback(
+    (progress) => {
+      if (!scenario) {
+        return;
+      }
+
+      const previousProgress =
+        previousProgressRef.current;
+
+      /*
+       * First progress response establishes the baseline.
+       *
+       * This prevents Alex from reacting to tasks that
+       * were already completed before the page loaded.
+       */
+      if (previousProgress === null) {
+        previousProgressRef.current = progress;
+        return;
+      }
+
+      const situations =
+        scenario.alex?.situations || {};
+
+      for (const task of scenario.tasks || []) {
+        const wasComplete = Boolean(
+          previousProgress[task.id]
+        );
+
+        const isComplete = Boolean(
+          progress[task.id]
+        );
+
+        /*
+         * Detect:
+         *
+         * false → true
+         *
+         * meaning the user just completed this task.
+         */
+        if (!wasComplete && isComplete) {
+          const reaction =
+            situations[task.id];
+
+          if (reaction) {
+            setAlexReaction(reaction);
+
+            /*
+             * If another reaction happens while one
+             * is already visible, restart the timer.
+             */
+            if (reactionTimeoutRef.current) {
+              clearTimeout(
+                reactionTimeoutRef.current
+              );
+            }
+
+            reactionTimeoutRef.current =
+              setTimeout(() => {
+                setAlexReaction(null);
+              }, 4000);
+          }
+
+          /*
+           * Only react to one newly completed task
+           * per progress update.
+           */
+          break;
+        }
+      }
+
+      previousProgressRef.current = progress;
+    },
+    [scenario]
+  );
+
+  /* =====================================================
+     CLEANUP ALEX REACTION TIMER
+  ====================================================== */
+
+  useEffect(() => {
+    return () => {
+      if (reactionTimeoutRef.current) {
+        clearTimeout(
+          reactionTimeoutRef.current
+        );
+      }
+    };
+  }, []);
+
+  /* =====================================================
+     CHECK SOLUTION
+  ====================================================== */
+
+  const checkSolution = async () => {
+    setChecking(true);
+    setValidation(null);
+
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/sessions/${sessionId}/validate`,
+        {
+          method: "POST",
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          "Validation request failed"
+        );
+      }
+
+      const data = await response.json();
+
+      /*
+       * Validation is a major story event, so remove
+       * the small sidebar reaction while the overlay
+       * is being shown.
+       */
+      setAlexReaction(null);
+
+      setValidation(data);
+    } catch (error) {
+      console.error(
+        "Validation failed:",
+        error
+      );
+
+      setValidation({
+        success: false,
+        message: "Unable to check the solution.",
+      });
+    } finally {
+      setChecking(false);
+    }
+  };
+
+  /* =====================================================
+     LOADING
+  ====================================================== */
+
+  if (loading) {
+    return (
+      <main className="flex h-[100dvh] items-center justify-center bg-[#0d1117] text-[#8b949e]">
+        <span className="text-xs">
+          Loading scenario...
+        </span>
+      </main>
+    );
+  }
+
+  /* =====================================================
+     SCENARIO NOT FOUND
+  ====================================================== */
+
+  if (!scenario) {
+    return (
+      <main className="flex h-[100dvh] items-center justify-center bg-[#0d1117] px-4 text-[#f0f6fc]">
+        <div className="text-center">
+
+          <h1 className="text-lg font-semibold">
+            Scenario unavailable
+          </h1>
+
+          <p className="mt-2 text-xs text-[#8b949e]">
+            This scenario could not be loaded.
+          </p>
+
+          <a
+            href="/browse"
+            className="mt-5 inline-flex rounded-md bg-[#238636] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#2ea043]"
+          >
+            Browse All
+          </a>
+
+        </div>
+      </main>
+    );
+  }
+
+  const alexIntro =
+    scenario.alex?.intro;
+
+  const alexSuccess =
+    scenario.alex?.success;
+
+  const alexFailure =
+    scenario.alex?.failure;
 
   return (
     <main className="h-[100dvh] overflow-hidden bg-[#0d1117] text-[#f0f6fc]">
+
+      {/* =====================================================
+          INITIAL STORY
+      ====================================================== */}
+
+      <SessionIntro
+        emotion={
+          alexIntro?.emotion || "talking"
+        }
+        message={
+          alexIntro?.message || ""
+        }
+      />
+
+      {/* =====================================================
+          VALIDATION STORY
+      ====================================================== */}
+{validation && (
+  <SessionIntro
+    key={
+      validation.success
+        ? "validation-success"
+        : "validation-failure"
+    }
+    emotion={
+      validation.success
+        ? alexSuccess?.emotion || "celebrating"
+        : alexFailure?.emotion || "concerned"
+    }
+    message={
+      validation.success
+        ? alexSuccess?.message || ""
+        : alexFailure?.message || ""
+    }
+    actions={[
+      {
+        label: "Retry",
+        onClick: () => {
+          setValidation(null);
+        },
+      },
+      {
+        label: "Browse All",
+        onClick: () => {
+          window.location.href = "/browse";
+        },
+      },
+    ]}
+  />
+)}
 
       {/* =====================================================
           HEADER
@@ -13,10 +345,10 @@ export default async function SessionPage({ params }) {
 
       <header className="flex h-12 items-center justify-between border-b border-[#30363d] bg-[#0d1117] px-4 sm:px-5">
 
-        {/* Left side */}
+        {/* LEFT */}
+
         <div className="flex min-w-0 items-center gap-3">
 
-          {/* Back button */}
           <a
             href="/browse"
             aria-label="Back to Browse All"
@@ -25,11 +357,11 @@ export default async function SessionPage({ params }) {
             ←
           </a>
 
-          {/* Logo */}
           <a
             href="/"
             className="flex min-w-0 items-center gap-2"
           >
+
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#238636] text-[10px] font-bold">
               G
             </div>
@@ -37,14 +369,18 @@ export default async function SessionPage({ params }) {
             <span className="truncate text-xs font-semibold sm:text-sm">
               Git Workflow Simulator
             </span>
+
           </a>
 
         </div>
 
+        {/* SESSION */}
 
-        {/* Desktop session ID */}
         <div className="hidden items-center gap-2 text-[10px] text-[#8b949e] sm:flex">
-          <span>Session</span>
+
+          <span>
+            Session
+          </span>
 
           <span className="text-[#30363d]">
             •
@@ -53,10 +389,11 @@ export default async function SessionPage({ params }) {
           <span className="font-mono">
             {sessionId.slice(0, 8)}
           </span>
+
         </div>
 
+        {/* MOBILE EXIT */}
 
-        {/* Mobile Exit */}
         <a
           href="/browse"
           className="rounded-md px-2.5 py-1.5 text-[10px] text-[#8b949e] transition hover:bg-[#161b22] hover:text-white sm:hidden"
@@ -65,7 +402,6 @@ export default async function SessionPage({ params }) {
         </a>
 
       </header>
-
 
       {/* =====================================================
           DESKTOP / TABLET
@@ -84,41 +420,41 @@ export default async function SessionPage({ params }) {
             </p>
 
             <h1 className="mt-2 text-lg font-bold leading-6">
-              Create Your First Commit
+              {scenario.title}
             </h1>
 
             <p className="mt-4 text-xs leading-5 text-[#8b949e]">
-              Initialize a Git repository and create your first commit.
+              {scenario.description}
             </p>
-
 
             {/* TASKS */}
 
             <div className="mt-8">
 
-              <h2 className="text-xs font-semibold uppercase tracking-wide text-white">
-                Tasks
-              </h2>
+              <TaskProgress
+                sessionId={sessionId}
+                tasks={scenario.tasks}
+                onProgressChange={
+                  handleProgressChange
+                }
+              />
 
-              <div className="mt-4 space-y-3">
+            </div>
 
-                <Task>
-                  Initialize a Git repository
-                </Task>
+            {/* ALEX SIDEBAR */}
 
-                <Task>
-                  Create a file
-                </Task>
+            <div className="mt-8">
 
-                <Task>
-                  Stage the file
-                </Task>
-
-                <Task>
-                  Create your first commit
-                </Task>
-
-              </div>
+              <AlexTeammate
+                emotion={
+                  alexReaction?.emotion ||
+                  "neutral"
+                }
+                name="Alex"
+                message={
+                  alexReaction?.message || ""
+                }
+              />
 
             </div>
 
@@ -126,14 +462,11 @@ export default async function SessionPage({ params }) {
 
         </aside>
 
-
         {/* TERMINAL */}
 
         <section className="min-w-0 flex-1 p-4 lg:p-5">
 
           <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-[#30363d] bg-[#0b0f14]">
-
-            {/* Terminal Header */}
 
             <div className="flex h-10 shrink-0 items-center gap-3 border-b border-[#30363d] bg-[#161b22] px-3">
 
@@ -150,7 +483,9 @@ export default async function SessionPage({ params }) {
             </div>
 
             <div className="min-h-0 flex-1 overflow-hidden">
-              <Terminal sessionId={sessionId} />
+              <Terminal
+                sessionId={sessionId}
+              />
             </div>
 
           </div>
@@ -158,7 +493,6 @@ export default async function SessionPage({ params }) {
         </section>
 
       </div>
-
 
       {/* =====================================================
           MOBILE
@@ -170,55 +504,57 @@ export default async function SessionPage({ params }) {
 
         <section className="shrink-0 border-b border-[#30363d] px-4 py-3">
 
-          <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
 
-            <div className="min-w-0">
+            <p className="text-[8px] font-semibold uppercase tracking-[0.16em] text-[#58a6ff]">
+              Objective
+            </p>
 
-              <p className="text-[8px] font-semibold uppercase tracking-[0.16em] text-[#58a6ff]">
-                Objective
-              </p>
-
-              <h1 className="mt-1 truncate text-sm font-bold">
-                Create Your First Commit
-              </h1>
-
-            </div>
-
-            <span className="shrink-0 rounded-full bg-[#21262d] px-2 py-1 text-[9px] text-[#8b949e]">
-              0/4
-            </span>
+            <h1 className="mt-1 truncate text-sm font-bold">
+              {scenario.title}
+            </h1>
 
           </div>
 
           <p className="mt-2 line-clamp-2 text-[9px] leading-4 text-[#8b949e]">
-            Initialize a Git repository and create your first commit.
+            {scenario.description}
           </p>
 
+          {/* TASKS */}
 
-          {/* Compact tasks */}
+          <div className="mt-3">
 
-          <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1.5">
-
-            <Task compact>
-              Initialize repository
-            </Task>
-
-            <Task compact>
-              Create a file
-            </Task>
-
-            <Task compact>
-              Stage the file
-            </Task>
-
-            <Task compact>
-              Create commit
-            </Task>
+            <TaskProgress
+              sessionId={sessionId}
+              tasks={scenario.tasks}
+              compact
+              onProgressChange={
+                handleProgressChange
+              }
+            />
 
           </div>
 
-        </section>
+          {/* MOBILE ALEX REACTION */}
 
+          {alexReaction && (
+            <div className="mt-3">
+
+              <AlexTeammate
+                emotion={
+                  alexReaction.emotion ||
+                  "neutral"
+                }
+                name="Alex"
+                message={
+                  alexReaction.message || ""
+                }
+              />
+
+            </div>
+          )}
+
+        </section>
 
         {/* TERMINAL */}
 
@@ -241,7 +577,9 @@ export default async function SessionPage({ params }) {
             </div>
 
             <div className="min-h-0 flex-1 overflow-hidden">
-              <Terminal sessionId={sessionId} />
+              <Terminal
+                sessionId={sessionId}
+              />
             </div>
 
           </div>
@@ -250,14 +588,13 @@ export default async function SessionPage({ params }) {
 
       </div>
 
-
       {/* =====================================================
           ACTION BAR
       ====================================================== */}
 
       <footer className="flex h-14 shrink-0 items-center justify-between border-t border-[#30363d] bg-[#0d1117] px-3 sm:px-5">
 
-        {/* Hints */}
+        {/* HINTS */}
 
         <div className="flex items-center gap-2">
 
@@ -277,8 +614,7 @@ export default async function SessionPage({ params }) {
 
         </div>
 
-
-        {/* Actions */}
+        {/* ACTIONS */}
 
         <div className="flex items-center gap-2">
 
@@ -291,9 +627,13 @@ export default async function SessionPage({ params }) {
 
           <button
             type="button"
-            className="rounded-md bg-[#238636] px-4 py-2 text-[10px] font-semibold text-white transition hover:bg-[#2ea043] sm:px-5 sm:text-xs"
+            onClick={checkSolution}
+            disabled={checking}
+            className="rounded-md bg-[#238636] px-4 py-2 text-[10px] font-semibold text-white transition hover:bg-[#2ea043] disabled:cursor-not-allowed disabled:opacity-60 sm:px-5 sm:text-xs"
           >
-            ✓ Check Solution
+            {checking
+              ? "Checking..."
+              : "✓ Check Solution"}
           </button>
 
         </div>
@@ -301,43 +641,5 @@ export default async function SessionPage({ params }) {
       </footer>
 
     </main>
-  );
-}
-
-
-/* =========================================================
-   TASK
-========================================================= */
-
-function Task({
-  children,
-  compact = false,
-}) {
-  return (
-    <div
-      className={`flex items-center gap-2 ${
-        compact ? "rounded-md px-1 py-0.5" : ""
-      }`}
-    >
-
-      <span
-        className={`flex shrink-0 items-center justify-center rounded-full border border-[#8b949e] ${
-          compact
-            ? "h-3 w-3"
-            : "h-5 w-5"
-        }`}
-      />
-
-      <span
-        className={`truncate text-[#c9d1d9] ${
-          compact
-            ? "text-[8px]"
-            : "text-[11px]"
-        }`}
-      >
-        {children}
-      </span>
-
-    </div>
   );
 }

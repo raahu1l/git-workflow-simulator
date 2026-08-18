@@ -4,5 +4,67 @@
   "difficulty": "Beginner",
   "category": "git-foundations",
   "description": "Initialize a Git repository and create your first commit.",
-  "estimatedTime": "5 min"
+  "estimatedTime": "5 min",
+
+  "tasks": [
+    {
+      "id": "initializeRepository",
+      "label": "Initialize a Git repository",
+      "compactLabel": "Initialize repository"
+    },
+    {
+      "id": "createFile",
+      "label": "Create README.md",
+      "compactLabel": "Create README.md"
+    },
+    {
+      "id": "stageFile",
+      "label": "Stage README.md",
+      "compactLabel": "Stage README.md"
+    },
+    {
+      "id": "createCommit",
+      "label": "Create your first commit",
+      "compactLabel": "Create commit"
+    }
+  ],
+
+  "alex": {
+    "intro": {
+      "emotion": "talking",
+      "message": "Hey! I was working on this repo earlier and got pulled away. I think I left things unfinished. Can you take a look?"
+    },
+
+    "situations": {
+      "initializeRepository": {
+        "emotion": "happy",
+        "message": "Nice! The repository is initialized. We're ready to start."
+      },
+
+      "createFile": {
+        "emotion": "thinking",
+        "message": "Good. We've got something to work with now."
+      },
+
+      "stageFile": {
+        "emotion": "happy",
+        "message": "Nice, the file is staged. We're almost there."
+      },
+
+      "createCommit": {
+        "emotion": "celebrating",
+        "message": "There it is! Your first commit is in."
+      }
+    },
+
+    "success": {
+      "emotion": "celebrating",
+      "message": "You did it! You saved me from having to come back and clean this up. I owe you one."
+    },
+
+    "failure": {
+      "emotion": "concerned",
+      "message": "Hmm... something's still not quite right. Take another look and give it another shot."
+    }
+  }
 }

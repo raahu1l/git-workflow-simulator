@@ -1,8 +1,15 @@
 module.exports = async ({ executeCommand, containerId }) => {
-  const commitCount = await executeCommand(
-    containerId,
-    "git rev-list --count HEAD"
-  );
+  let commitCount = "0";
+
+  try {
+    commitCount = await executeCommand(
+      containerId,
+      "git rev-list --count HEAD"
+    );
+  } catch (error) {
+    // No HEAD means the repository has no commits yet.
+    commitCount = "0";
+  }
 
   const status = await executeCommand(
     containerId,
@@ -37,6 +44,6 @@ module.exports = async ({ executeCommand, containerId }) => {
 
   return {
     success: true,
-    message: "Great job! First Commit completed successfully.",
+    message: "Solution completed successfully.",
   };
 };

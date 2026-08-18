@@ -3,6 +3,10 @@ const {
   getScenarioProgress,
 } = require("../services/validation-runner.service");
 
+const {
+  getSandbox,
+} = require("../services/sandbox.service");
+
 const validateSession = async (req, res) => {
   try {
     const result = await validateScenario(
@@ -47,7 +51,26 @@ const getProgress = async (req, res) => {
   }
 };
 
+const getSession = (req, res) => {
+  const sandbox = getSandbox(
+    req.params.sessionId
+  );
+
+  if (!sandbox) {
+    return res.status(404).json({
+      message: "Session not found",
+    });
+  }
+
+  res.json({
+    sessionId: sandbox.sessionId,
+    scenarioId: sandbox.scenarioId,
+    status: sandbox.status,
+  });
+};
+
 module.exports = {
   validateSession,
   getProgress,
+  getSession,
 };
