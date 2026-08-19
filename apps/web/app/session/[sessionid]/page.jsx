@@ -24,23 +24,11 @@ export default function SessionPage() {
   const [validation, setValidation] = useState(null);
   const [checking, setChecking] = useState(false);
 
-  /*
-   * Current Alex sidebar reaction.
-   *
-   * null = normal/neutral Alex
-   */
   const [alexReaction, setAlexReaction] = useState(null);
 
-  /*
-   * Previous progress is kept in a ref so that
-   * progress changes don't cause unnecessary renders.
-   */
-  const previousProgressRef = useRef(null);
+  const [activeHint, setActiveHint] = useState(null);
 
-  /*
-   * Used to automatically remove the reaction
-   * after a few seconds.
-   */
+  const previousProgressRef = useRef(null);
   const reactionTimeoutRef = useRef(null);
 
   /* =====================================================
@@ -107,12 +95,6 @@ export default function SessionPage() {
       const previousProgress =
         previousProgressRef.current;
 
-      /*
-       * First progress response establishes the baseline.
-       *
-       * This prevents Alex from reacting to tasks that
-       * were already completed before the page loaded.
-       */
       if (previousProgress === null) {
         previousProgressRef.current = progress;
         return;
@@ -130,13 +112,6 @@ export default function SessionPage() {
           progress[task.id]
         );
 
-        /*
-         * Detect:
-         *
-         * false → true
-         *
-         * meaning the user just completed this task.
-         */
         if (!wasComplete && isComplete) {
           const reaction =
             situations[task.id];
@@ -144,10 +119,6 @@ export default function SessionPage() {
           if (reaction) {
             setAlexReaction(reaction);
 
-            /*
-             * If another reaction happens while one
-             * is already visible, restart the timer.
-             */
             if (reactionTimeoutRef.current) {
               clearTimeout(
                 reactionTimeoutRef.current
@@ -160,10 +131,6 @@ export default function SessionPage() {
               }, 4000);
           }
 
-          /*
-           * Only react to one newly completed task
-           * per progress update.
-           */
           break;
         }
       }
@@ -194,6 +161,7 @@ export default function SessionPage() {
   const checkSolution = async () => {
     setChecking(true);
     setValidation(null);
+    setActiveHint(null);
 
     try {
       const response = await fetch(
@@ -211,11 +179,6 @@ export default function SessionPage() {
 
       const data = await response.json();
 
-      /*
-       * Validation is a major story event, so remove
-       * the small sidebar reaction while the overlay
-       * is being shown.
-       */
       setAlexReaction(null);
 
       setValidation(data);
@@ -232,6 +195,18 @@ export default function SessionPage() {
     } finally {
       setChecking(false);
     }
+  };
+
+  /* =====================================================
+     HINTS
+  ====================================================== */
+
+  const hints = scenario?.hints || [];
+
+  const toggleHint = (index) => {
+    setActiveHint((current) =>
+      current === index ? null : index
+    );
   };
 
   /* =====================================================
@@ -305,47 +280,49 @@ export default function SessionPage() {
       {/* =====================================================
           VALIDATION STORY
       ====================================================== */}
-{validation && (
-  <SessionIntro
-    key={
-      validation.success
-        ? "validation-success"
-        : "validation-failure"
-    }
-    emotion={
-      validation.success
-        ? alexSuccess?.emotion || "celebrating"
-        : alexFailure?.emotion || "concerned"
-    }
-    message={
-      validation.success
-        ? alexSuccess?.message || ""
-        : alexFailure?.message || ""
-    }
-    actions={[
-      {
-        label: "Retry",
-        onClick: () => {
-          setValidation(null);
-        },
-      },
-      {
-        label: "Browse All",
-        onClick: () => {
-          window.location.href = "/browse";
-        },
-      },
-    ]}
-  />
-)}
+
+      {validation && (
+        <SessionIntro
+          key={
+            validation.success
+              ? "validation-success"
+              : "validation-failure"
+          }
+          emotion={
+            validation.success
+              ? alexSuccess?.emotion ||
+                "celebrating"
+              : alexFailure?.emotion ||
+                "concerned"
+          }
+          message={
+            validation.success
+              ? alexSuccess?.message || ""
+              : alexFailure?.message || ""
+          }
+          actions={[
+            {
+              label: "Retry",
+              onClick: () => {
+                setValidation(null);
+              },
+            },
+            {
+              label: "Browse All",
+              onClick: () => {
+                window.location.href =
+                  "/browse";
+              },
+            },
+          ]}
+        />
+      )}
 
       {/* =====================================================
           HEADER
       ====================================================== */}
 
       <header className="flex h-12 items-center justify-between border-b border-[#30363d] bg-[#0d1117] px-4 sm:px-5">
-
-        {/* LEFT */}
 
         <div className="flex min-w-0 items-center gap-3">
 
@@ -374,8 +351,6 @@ export default function SessionPage() {
 
         </div>
 
-        {/* SESSION */}
-
         <div className="hidden items-center gap-2 text-[10px] text-[#8b949e] sm:flex">
 
           <span>
@@ -392,8 +367,6 @@ export default function SessionPage() {
 
         </div>
 
-        {/* MOBILE EXIT */}
-
         <a
           href="/browse"
           className="rounded-md px-2.5 py-1.5 text-[10px] text-[#8b949e] transition hover:bg-[#161b22] hover:text-white sm:hidden"
@@ -408,8 +381,6 @@ export default function SessionPage() {
       ====================================================== */}
 
       <div className="hidden h-[calc(100dvh-7rem)] min-h-0 sm:flex">
-
-        {/* LEFT PANEL */}
 
         <aside className="flex w-[270px] shrink-0 flex-col border-r border-[#30363d] bg-[#0d1117] lg:w-[300px]">
 
@@ -441,7 +412,7 @@ export default function SessionPage() {
 
             </div>
 
-            {/* ALEX SIDEBAR */}
+            {/* ALEX */}
 
             <div className="mt-8">
 
@@ -500,8 +471,6 @@ export default function SessionPage() {
 
       <div className="flex h-[calc(100dvh-7rem)] min-h-0 flex-col sm:hidden">
 
-        {/* OBJECTIVE */}
-
         <section className="shrink-0 border-b border-[#30363d] px-4 py-3">
 
           <div className="min-w-0">
@@ -535,7 +504,7 @@ export default function SessionPage() {
 
           </div>
 
-          {/* MOBILE ALEX REACTION */}
+          {/* MOBILE ALEX */}
 
           {alexReaction && (
             <div className="mt-3">
@@ -596,21 +565,56 @@ export default function SessionPage() {
 
         {/* HINTS */}
 
-        <div className="flex items-center gap-2">
+        <div className="relative flex items-center gap-2">
 
-          <button
-            type="button"
-            className="rounded-md border border-[#30363d] bg-[#161b22] px-3 py-2 text-[10px] text-[#c9d1d9] transition hover:bg-[#21262d] sm:text-xs"
-          >
-            💡 Hint 1
-          </button>
+          {hints.slice(0, 2).map((hint, index) => (
+            <div
+              key={index}
+              className="relative"
+            >
 
-          <button
-            type="button"
-            className="rounded-md border border-[#30363d] bg-[#161b22] px-3 py-2 text-[10px] text-[#c9d1d9] transition hover:bg-[#21262d] sm:text-xs"
-          >
-            💡 Hint 2
-          </button>
+              <button
+                type="button"
+                onClick={() => toggleHint(index)}
+                className={`rounded-md border px-3 py-2 text-[10px] transition sm:text-xs ${
+                  activeHint === index
+                    ? "border-[#58a6ff] bg-[#161b22] text-white"
+                    : "border-[#30363d] bg-[#161b22] text-[#c9d1d9] hover:bg-[#21262d]"
+                }`}
+              >
+                💡 Hint {index + 1}
+              </button>
+
+              {activeHint === index && (
+                <div className="absolute bottom-12 left-0 z-40 w-64 rounded-lg border border-[#30363d] bg-[#161b22] p-3 shadow-xl sm:w-72">
+
+                  <div className="mb-2 flex items-center justify-between">
+
+                    <span className="text-[10px] font-semibold uppercase tracking-wide text-[#58a6ff]">
+                      Hint {index + 1}
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setActiveHint(null)
+                      }
+                      className="text-xs text-[#8b949e] hover:text-white"
+                    >
+                      ×
+                    </button>
+
+                  </div>
+
+                  <p className="text-xs leading-5 text-[#c9d1d9]">
+                    {hint}
+                  </p>
+
+                </div>
+              )}
+
+            </div>
+          ))}
 
         </div>
 

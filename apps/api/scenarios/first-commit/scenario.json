@@ -29,6 +29,11 @@
     }
   ],
 
+  "hints": [
+  "Start by initializing Git in the /workspace directory with git init.",
+  "After creating README.md, stage it with git add README.md and create a commit with git commit."
+],
+
   "alex": {
     "intro": {
       "emotion": "talking",
