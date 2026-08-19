@@ -1,33 +1,35 @@
 module.exports = async ({ executeCommand, containerId }) => {
-  let commitCount = "0";
-
-  try {
-    commitCount = await executeCommand(
+  // Make sure every Git command runs inside the scenario workspace.
+  const git = (command) =>
+    executeCommand(
       containerId,
-      "git rev-list --count HEAD"
+      `cd /workspace && ${command}`
     );
-  } catch (error) {
-    // No HEAD means the repository has no commits yet.
-    commitCount = "0";
-  }
 
-  const status = await executeCommand(
-    containerId,
-    "git status --porcelain"
+  // 1. Count commits.
+  const commitCount = await git(
+    "git rev-list --count HEAD 2>/dev/null || echo 0"
   );
 
-  const readmeExists = await executeCommand(
-    containerId,
-    "test -f /workspace/README.md && echo yes || echo no"
+  // 2. Check working tree.
+  const status = await git(
+    "git status --porcelain 2>/dev/null || true"
   );
 
-  if (Number(commitCount) !== 1) {
+  // 3. Check README.md.
+  const readmeExists = await git(
+    "test -f README.md && echo yes || echo no"
+  );
+
+  // Exactly one commit is required.
+  if (Number(commitCount.trim()) !== 1) {
     return {
       success: false,
       message: "Expected exactly one commit.",
     };
   }
 
+  // Working tree must be clean.
   if (status.trim() !== "") {
     return {
       success: false,
@@ -35,6 +37,7 @@ module.exports = async ({ executeCommand, containerId }) => {
     };
   }
 
+  // README.md must exist.
   if (readmeExists.trim() !== "yes") {
     return {
       success: false,
@@ -44,6 +47,6 @@ module.exports = async ({ executeCommand, containerId }) => {
 
   return {
     success: true,
-    message: "Solution completed successfully.",
+    message: "Great job! First Commit completed successfully.",
   };
 };

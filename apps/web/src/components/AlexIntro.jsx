@@ -15,6 +15,7 @@ export default function AlexIntro({
     concerned: "/alex/concerned.png",
     thinking: "/alex/thinking.png",
     happy: "/alex/happy.png",
+    celebrating: "/alex/celebrating.png",
     confused: "/alex/confused.png",
   };
 
