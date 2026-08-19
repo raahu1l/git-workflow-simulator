@@ -1,4 +1,5 @@
 const crypto = require("crypto");
+
 const { sessions } = require("../store/sessions");
 
 const createSandbox = (scenarioId, containerId) => {
@@ -28,7 +29,10 @@ const getSandbox = (sessionId) => {
   return sessions[sessionId];
 };
 
-const updateSandboxStatus = (sessionId, status) => {
+const updateSandboxStatus = (
+  sessionId,
+  status
+) => {
   const sandbox = sessions[sessionId];
 
   if (!sandbox) {
@@ -36,6 +40,18 @@ const updateSandboxStatus = (sessionId, status) => {
   }
 
   sandbox.status = status;
+
+  return sandbox;
+};
+
+const resetSandbox = (sessionId) => {
+  const sandbox = sessions[sessionId];
+
+  if (!sandbox) {
+    return null;
+  }
+
+  sandbox.status = "created";
 
   return sandbox;
 };
@@ -56,5 +72,6 @@ module.exports = {
   createSandbox,
   getSandbox,
   updateSandboxStatus,
+  resetSandbox,
   deleteSandbox,
 };

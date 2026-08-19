@@ -9,15 +9,26 @@ export default function Terminal({ sessionId }) {
   const terminalInstanceRef = useRef(null);
 
   useEffect(() => {
-    let terminal;
-    let socket;
-    let resizeObserver;
+    let terminal = null;
+    let socket = null;
+    let resizeObserver = null;
+    let dataDisposable = null;
+
+    // Prevent stale async initialization from creating
+    // a terminal after this component has already unmounted.
+    let destroyed = false;
+
+    // Once cleanup starts, no more input or resize
+    // messages should be sent to the old socket.
+    let shuttingDown = false;
 
     const init = async () => {
       const { Terminal: XTerm } = await import("xterm");
       const { FitAddon } = await import("xterm-addon-fit");
 
-      if (!terminalRef.current) return;
+      if (destroyed || !terminalRef.current) {
+        return;
+      }
 
       terminal = new XTerm({
         cursorBlink: true,
@@ -40,49 +51,61 @@ export default function Terminal({ sessionId }) {
       terminal.loadAddon(fitAddon);
       terminal.open(terminalRef.current);
 
+      if (destroyed) {
+        terminal.dispose();
+        terminal = null;
+        return;
+      }
+
       terminalInstanceRef.current = terminal;
+
+      /*
+       * IMPORTANT:
+       * Explicitly focus xterm after it has been mounted.
+       * This is especially important after Reset/Retry because
+       * the Terminal component is remounted.
+       */
+      requestAnimationFrame(() => {
+        if (!destroyed && !shuttingDown && terminal) {
+          terminal.focus();
+        }
+      });
 
       /* =========================================
          INITIAL TERMINAL SIZE
       ========================================== */
 
       const fitTerminal = () => {
+        if (
+          destroyed ||
+          shuttingDown ||
+          !terminal ||
+          !socket ||
+          socket.readyState !== WebSocket.OPEN
+        ) {
+          return;
+        }
+
         try {
           fitAddon.fit();
 
-          if (
-            socket &&
-            socket.readyState === WebSocket.OPEN
-          ) {
-            socket.send(
-              JSON.stringify({
-                type: "resize",
-                sessionId,
-                cols: terminal.cols,
-                rows: terminal.rows,
-              })
+          socket.send(
+            JSON.stringify({
+              type: "resize",
+              sessionId,
+              cols: terminal.cols,
+              rows: terminal.rows,
+            })
+          );
+        } catch (error) {
+          if (!shuttingDown) {
+            console.error(
+              "Terminal resize error:",
+              error
             );
           }
-        } catch (error) {
-          console.error("Terminal resize error:", error);
         }
       };
-
-      requestAnimationFrame(() => {
-        fitTerminal();
-      });
-
-      /* =========================================
-         RESIZE OBSERVER
-      ========================================== */
-
-      resizeObserver = new ResizeObserver(() => {
-        requestAnimationFrame(() => {
-          fitTerminal();
-        });
-      });
-
-      resizeObserver.observe(terminalRef.current);
 
       /* =========================================
          WEBSOCKET
@@ -93,10 +116,30 @@ export default function Terminal({ sessionId }) {
       socketRef.current = socket;
 
       socket.onopen = () => {
-        terminal.writeln("Connecting...");
+        if (destroyed || shuttingDown) {
+          return;
+        }
+
+        terminal?.writeln("Connecting...");
+
+        requestAnimationFrame(() => {
+          if (!destroyed && !shuttingDown && terminal) {
+            terminal.focus();
+          }
+
+          fitTerminal();
+        });
       };
 
       socket.onmessage = (event) => {
+        if (
+          destroyed ||
+          shuttingDown ||
+          !terminal
+        ) {
+          return;
+        }
+
         try {
           const message = JSON.parse(event.data);
 
@@ -108,33 +151,62 @@ export default function Terminal({ sessionId }) {
               break;
 
             default:
-              console.log("Unknown terminal message:", message);
+              console.log(
+                "Unknown terminal message:",
+                message
+              );
           }
         } catch (error) {
-          console.error(
-            "Failed to parse terminal message:",
-            error
-          );
+          if (!shuttingDown) {
+            console.error(
+              "Failed to parse terminal message:",
+              error
+            );
+          }
         }
       };
 
       socket.onerror = () => {
-        terminal.writeln("\r\nWebSocket Error");
+        if (
+          !destroyed &&
+          !shuttingDown &&
+          terminal
+        ) {
+          terminal.writeln(
+            "\r\nWebSocket Error"
+          );
+        }
       };
 
       socket.onclose = () => {
-        terminal.writeln("\r\nDisconnected");
+        // Do not print "Disconnected" during an intentional
+        // reset/remount.
+        if (
+          !destroyed &&
+          !shuttingDown &&
+          terminal
+        ) {
+          terminal.writeln(
+            "\r\nDisconnected"
+          );
+        }
       };
 
       /* =========================================
          TERMINAL INPUT → WEBSOCKET
       ========================================== */
 
-      terminal.onData((data) => {
+      dataDisposable = terminal.onData((data) => {
         if (
-          socket &&
-          socket.readyState === WebSocket.OPEN
+          destroyed ||
+          shuttingDown ||
+          !socket ||
+          socket.readyState !== WebSocket.OPEN
         ) {
+          return;
+        }
+
+        try {
           socket.send(
             JSON.stringify({
               type: "input",
@@ -142,6 +214,55 @@ export default function Terminal({ sessionId }) {
               data,
             })
           );
+        } catch (error) {
+          if (!shuttingDown) {
+            console.error(
+              "Terminal input error:",
+              error
+            );
+          }
+        }
+      });
+
+      /* =========================================
+         RESIZE OBSERVER
+      ========================================== */
+
+      if (
+        !destroyed &&
+        terminalRef.current
+      ) {
+        resizeObserver =
+          new ResizeObserver(() => {
+            if (
+              destroyed ||
+              shuttingDown
+            ) {
+              return;
+            }
+
+            requestAnimationFrame(() => {
+              fitTerminal();
+            });
+          });
+
+        resizeObserver.observe(
+          terminalRef.current
+        );
+      }
+
+      /* =========================================
+         INITIAL FIT
+      ========================================== */
+
+      requestAnimationFrame(() => {
+        if (
+          !destroyed &&
+          !shuttingDown &&
+          terminal
+        ) {
+          fitTerminal();
+          terminal.focus();
         }
       });
     };
@@ -153,19 +274,78 @@ export default function Terminal({ sessionId }) {
     ========================================== */
 
     return () => {
+      // FIRST: completely disable the old terminal.
+      destroyed = true;
+      shuttingDown = true;
+
+      // Stop resize events immediately.
       if (resizeObserver) {
         resizeObserver.disconnect();
+        resizeObserver = null;
       }
 
-      if (socket) {
-        socket.close();
+      // Stop sending keyboard input BEFORE
+      // touching the WebSocket.
+      if (dataDisposable) {
+        try {
+          dataDisposable.dispose();
+        } catch (error) {
+          console.error(
+            "Failed to dispose terminal input:",
+            error
+          );
+        }
+
+        dataDisposable = null;
       }
 
+      // Prevent any future code from using the old socket.
+      const oldSocket = socket;
+      socket = null;
+
+      if (socketRef.current === oldSocket) {
+        socketRef.current = null;
+      }
+
+      // Close the old WebSocket cleanly.
+      if (oldSocket) {
+        try {
+          oldSocket.onopen = null;
+          oldSocket.onmessage = null;
+          oldSocket.onerror = null;
+          oldSocket.onclose = null;
+
+          if (
+            oldSocket.readyState ===
+            WebSocket.OPEN
+          ) {
+            oldSocket.close(
+              1000,
+              "Terminal reset"
+            );
+          }
+        } catch (error) {
+          console.error(
+            "Failed to close terminal socket:",
+            error
+          );
+        }
+      }
+
+      // Finally dispose the xterm instance.
       if (terminal) {
-        terminal.dispose();
+        try {
+          terminal.dispose();
+        } catch (error) {
+          console.error(
+            "Failed to dispose terminal:",
+            error
+          );
+        }
+
+        terminal = null;
       }
 
-      socketRef.current = null;
       terminalInstanceRef.current = null;
     };
   }, [sessionId]);
@@ -173,6 +353,9 @@ export default function Terminal({ sessionId }) {
   return (
     <div
       ref={terminalRef}
+      onClick={() => {
+        terminalInstanceRef.current?.focus();
+      }}
       className="h-full w-full overflow-hidden bg-[#0d1117] p-2"
     />
   );
