@@ -7,6 +7,10 @@ const scenariosPath = path.resolve(
   "../../scenarios"
 );
 
+/* =========================================
+   CREATE CONTAINER
+========================================= */
+
 const createContainer = () => {
   return new Promise((resolve, reject) => {
     exec(
@@ -22,9 +26,17 @@ const createContainer = () => {
   });
 };
 
-const executeCommand = (containerId, command) => {
+/* =========================================
+   EXECUTE SINGLE COMMAND
+========================================= */
+
+const executeCommand = (
+  containerId,
+  command
+) => {
   return new Promise((resolve, reject) => {
-    const escapedCommand = command.replace(/"/g, '\\"');
+    const escapedCommand =
+      command.replace(/"/g, '\\"');
 
     exec(
       `docker exec ${containerId} bash -c "${escapedCommand}"`,
@@ -39,14 +51,25 @@ const executeCommand = (containerId, command) => {
   });
 };
 
+/* =========================================
+   EXECUTE MULTIPLE COMMANDS
+========================================= */
+
 const executeCommands = async (
   containerId,
   commands
 ) => {
   for (const command of commands) {
-    await executeCommand(containerId, command);
+    await executeCommand(
+      containerId,
+      command
+    );
   }
 };
+
+/* =========================================
+   RUN SCENARIO SETUP
+========================================= */
 
 const runSetupScript = (
   containerId,
@@ -58,24 +81,47 @@ const runSetupScript = (
   );
 };
 
+/* =========================================
+   START INTERACTIVE TERMINAL
+========================================= */
+
 const startTerminal = (containerId) => {
+  /*
+   * Windows:
+   *
+   * node-pty
+   *   ↓
+   * cmd.exe
+   *   ↓
+   * docker exec -it
+   *   ↓
+   * bash -i
+   *
+   * We keep cmd.exe here because Docker is
+   * resolved correctly through the Windows
+   * PATH in this environment.
+   */
+
+  const command = `docker exec -it ${containerId} bash -i`;
+
   const terminal = pty.spawn(
     process.env.ComSpec ||
       "C:\\Windows\\System32\\cmd.exe",
     [
+      "/d",
+      "/s",
       "/c",
-      "docker",
-      "exec",
-      "-it",
-      containerId,
-      "bash",
+      command,
     ],
     {
       name: "xterm-color",
       cols: 120,
       rows: 30,
       cwd: process.cwd(),
-      env: process.env,
+      env: {
+        ...process.env,
+        TERM: "xterm-256color",
+      },
     }
   );
 

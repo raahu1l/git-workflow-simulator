@@ -28,6 +28,14 @@ export default function SessionPage() {
 
   const [activeHint, setActiveHint] = useState(null);
 
+  const [progressRefreshKey, setProgressRefreshKey] =
+    useState(0);
+
+  // Remount the terminal after a reset so its visible shell/filesystem
+  // state is refreshed along with the backend session state.
+  const [terminalRefreshKey, setTerminalRefreshKey] =
+    useState(0);
+
   const previousProgressRef = useRef(null);
   const reactionTimeoutRef = useRef(null);
 
@@ -153,6 +161,55 @@ export default function SessionPage() {
       }
     };
   }, []);
+
+  /* =====================================================
+     RESET SCENARIO
+  ====================================================== */
+
+  const resetScenario = async () => {
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/sessions/${sessionId}/reset`,
+        {
+          method: "POST",
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Reset request failed");
+      }
+
+      // Close validation overlay.
+      setValidation(null);
+
+      // Close any open hint.
+      setActiveHint(null);
+
+      // Remove Alex reaction.
+      setAlexReaction(null);
+
+      // Allow the next completed task to
+      // trigger its Alex reaction again.
+      previousProgressRef.current = null;
+
+      // Force TaskProgress to fetch the
+      // fresh progress from the backend.
+      setProgressRefreshKey(
+        (value) => value + 1
+      );
+
+      // Force Terminal to remount so the shell, files, and working tree
+      // are loaded again from the reset backend session.
+      setTerminalRefreshKey(
+        (value) => value + 1
+      );
+    } catch (error) {
+      console.error(
+        "Reset failed:",
+        error
+      );
+    }
+  };
 
   /* =====================================================
      CHECK SOLUTION
@@ -303,8 +360,10 @@ export default function SessionPage() {
           actions={[
             {
               label: "Retry",
-              onClick: () => {
-                setValidation(null);
+              onClick: async () => {
+                // Retry means a complete scenario restart, not just
+                // closing the validation message.
+                await resetScenario();
               },
             },
             {
@@ -403,6 +462,7 @@ export default function SessionPage() {
             <div className="mt-8">
 
               <TaskProgress
+                key={`desktop-${progressRefreshKey}`}
                 sessionId={sessionId}
                 tasks={scenario.tasks}
                 onProgressChange={
@@ -455,6 +515,7 @@ export default function SessionPage() {
 
             <div className="min-h-0 flex-1 overflow-hidden">
               <Terminal
+                key={`desktop-terminal-${terminalRefreshKey}`}
                 sessionId={sessionId}
               />
             </div>
@@ -494,6 +555,7 @@ export default function SessionPage() {
           <div className="mt-3">
 
             <TaskProgress
+              key={`mobile-${progressRefreshKey}`}
               sessionId={sessionId}
               tasks={scenario.tasks}
               compact
@@ -547,6 +609,7 @@ export default function SessionPage() {
 
             <div className="min-h-0 flex-1 overflow-hidden">
               <Terminal
+                key={`desktop-terminal-${terminalRefreshKey}`}
                 sessionId={sessionId}
               />
             </div>
@@ -624,6 +687,7 @@ export default function SessionPage() {
 
           <button
             type="button"
+            onClick={resetScenario}
             className="rounded-md border border-[#30363d] bg-[#161b22] px-4 py-2 text-[10px] font-medium text-[#c9d1d9] transition hover:bg-[#21262d] sm:text-xs"
           >
             Reset

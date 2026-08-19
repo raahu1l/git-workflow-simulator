@@ -5,7 +5,13 @@ const {
 
 const {
   getSandbox,
+  resetSandbox,
 } = require("../services/sandbox.service");
+
+const {
+  executeCommand,
+  runSetupScript,
+} = require("../services/docker.service");
 
 const validateSession = async (req, res) => {
   try {
@@ -69,8 +75,60 @@ const getSession = (req, res) => {
   });
 };
 
+const resetSession = async (req, res) => {
+  try {
+    const sessionId = req.params.sessionId;
+
+    const sandbox = getSandbox(sessionId);
+
+    if (!sandbox) {
+      return res.status(404).json({
+        message: "Session not found",
+      });
+    }
+
+    console.log(
+      `Resetting session ${sessionId}`
+    );
+
+    // Remove the current scenario state.
+    await executeCommand(
+      sandbox.containerId,
+      "cd /workspace && rm -rf .git README.md"
+    );
+
+    // Restore the scenario's initial state.
+    await runSetupScript(
+      sandbox.containerId,
+      sandbox.scenarioId
+    );
+
+    resetSandbox(sessionId);
+
+    console.log(
+      `Session ${sessionId} reset successfully`
+    );
+
+    res.json({
+      success: true,
+      message: "Scenario reset successfully.",
+    });
+  } catch (error) {
+    console.error(
+      "Reset failed:",
+      error
+    );
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to reset scenario.",
+    });
+  }
+};
+
 module.exports = {
   validateSession,
   getProgress,
   getSession,
+  resetSession,
 };
