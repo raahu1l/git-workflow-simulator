@@ -1,6 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useState,
+  useRef,
+} from "react";
 
 export default function TaskProgress({
   sessionId,
@@ -11,10 +15,20 @@ export default function TaskProgress({
   const [progress, setProgress] = useState({});
   const [error, setError] = useState(false);
 
+  /*
+   * Keep the latest progress available without
+   * triggering React state updates during render.
+   */
+  const progressRef = useRef({});
+
   useEffect(() => {
     let cancelled = false;
 
     const fetchProgress = async () => {
+      if (!sessionId || cancelled) {
+        return;
+      }
+
       try {
         const response = await fetch(
           `http://localhost:5000/api/sessions/${sessionId}/progress`,
@@ -23,42 +37,119 @@ export default function TaskProgress({
           }
         );
 
-        if (!response.ok) {
-          throw new Error("Failed to fetch progress");
+        let data = null;
+
+        try {
+          data = await response.json();
+        } catch {
+          data = null;
         }
 
-        const data = await response.json();
+        if (!response.ok) {
+          const message =
+            data?.message ||
+            `Progress request failed (${response.status})`;
 
-        if (!cancelled) {
-          setProgress(data);
-          setError(false);
+          throw new Error(message);
+        }
 
-          // Let the session page observe progress changes.
-          if (onProgressChange) {
-            onProgressChange(data);
-          }
+        if (
+          !data ||
+          typeof data !== "object" ||
+          Array.isArray(data)
+        ) {
+          throw new Error(
+            "Invalid progress response from server"
+          );
+        }
+
+        if (cancelled) {
+          return;
+        }
+
+        /*
+         * Merge the new backend state with the
+         * already-achieved tasks.
+         *
+         * This makes task progression monotonic:
+         *
+         * false → true
+         *
+         * but never:
+         *
+         * true → false
+         */
+        const previousProgress =
+          progressRef.current;
+
+        const mergedProgress = {};
+
+        for (const task of tasks) {
+          mergedProgress[task.id] =
+            previousProgress[task.id] === true ||
+            data[task.id] === true;
+        }
+
+        /*
+         * Store the merged state in the ref first.
+         */
+        progressRef.current =
+          mergedProgress;
+
+        /*
+         * Then update React state.
+         */
+        setProgress(mergedProgress);
+
+        setError(false);
+
+        /*
+         * IMPORTANT:
+         *
+         * Notify the parent AFTER the state update
+         * calculation, not inside the setState updater.
+         */
+        if (onProgressChange) {
+          onProgressChange(
+            mergedProgress
+          );
         }
       } catch (err) {
-        console.error("Progress fetch failed:", err);
-
-        if (!cancelled) {
-          setError(true);
+        if (cancelled) {
+          return;
         }
+
+        console.error(
+          "Progress fetch failed:",
+          err
+        );
+
+        /*
+         * Keep the last valid progress state.
+         */
+        setError(true);
       }
     };
 
     fetchProgress();
 
-    const interval = setInterval(fetchProgress, 1000);
+    const interval = setInterval(
+      fetchProgress,
+      1000
+    );
 
     return () => {
       cancelled = true;
       clearInterval(interval);
     };
-  }, [sessionId, onProgressChange]);
+  }, [
+    sessionId,
+    tasks,
+    onProgressChange,
+  ]);
 
   const completedCount = tasks.filter(
-    (task) => progress[task.id]
+    (task) => progress[task.id] === true
   ).length;
 
   return (
@@ -91,7 +182,8 @@ export default function TaskProgress({
         }
       >
         {tasks.map((task) => {
-          const completed = progress[task.id];
+          const completed =
+            progress[task.id] === true;
 
           return (
             <div
@@ -100,7 +192,9 @@ export default function TaskProgress({
             >
               <span
                 className={`flex shrink-0 items-center justify-center rounded-full border ${
-                  compact ? "h-3 w-3" : "h-5 w-5"
+                  compact
+                    ? "h-3 w-3"
+                    : "h-5 w-5"
                 } ${
                   completed
                     ? "border-[#3fb950] bg-[#238636] text-white"

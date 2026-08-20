@@ -1,0 +1,66 @@
+{
+  "id": "tracking-a-forgotten-file",
+  "title": "Track a Forgotten File",
+  "difficulty": "Beginner",
+  "category": "git-foundations",
+  "description": "A file was created but forgotten before the commit. Find it, track it, and include it in the repository.",
+  "estimatedTime": "5 min",
+
+  "tasks": [
+    {
+      "id": "stageFile",
+      "label": "Stage the forgotten file",
+      "compactLabel": "Stage file"
+    },
+    {
+      "id": "createCommit",
+      "label": "Commit the forgotten file",
+      "compactLabel": "Create commit"
+    },
+    {
+      "id": "cleanWorkingTree",
+      "label": "Leave the working tree clean",
+      "compactLabel": "Clean working tree"
+    }
+  ],
+
+  "hints": [
+    "Use git status to find files that Git is not tracking.",
+    "Stage the forgotten file with git add project-notes.txt.",
+    "After committing, use git status to make sure the working tree is clean."
+  ],
+
+  "alex": {
+    "intro": {
+      "emotion": "thinking",
+      "message": "I think I forgot to include an important file in the repository. Can you find it and make sure it gets committed?"
+    },
+
+    "situations": {
+      "stageFile": {
+        "emotion": "happy",
+        "message": "Nice! The forgotten file is staged and ready to be committed."
+      },
+
+      "createCommit": {
+        "emotion": "celebrating",
+        "message": "Great! The forgotten file is now part of the repository history."
+      },
+
+      "cleanWorkingTree": {
+        "emotion": "happy",
+        "message": "Perfect. Everything is clean now."
+      }
+    },
+
+    "success": {
+      "emotion": "celebrating",
+      "message": "Nice work! You found the forgotten file and safely added it to the repository."
+    },
+
+    "failure": {
+      "emotion": "concerned",
+      "message": "Something is still missing. Check the Git status and make sure the forgotten file is committed."
+    }
+  }
+}
