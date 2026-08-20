@@ -2,6 +2,10 @@ const { exec } = require("child_process");
 const pty = require("node-pty");
 const path = require("path");
 
+const {
+  getScenarioDirectory,
+} = require("./scenario.service");
+
 const scenariosPath = path.resolve(
   __dirname,
   "../../scenarios"
@@ -75,9 +79,43 @@ const runSetupScript = (
   containerId,
   scenarioId
 ) => {
+  const scenarioDirectory =
+    getScenarioDirectory(scenarioId);
+
+  if (!scenarioDirectory) {
+    return Promise.reject(
+      new Error(
+        `Scenario directory not found: ${scenarioId}`
+      )
+    );
+  }
+
+  /*
+   * Convert the local scenario path into
+   * a path relative to /scenarios.
+   *
+   * Example:
+   *
+   * scenarios/
+   *   git-foundations/
+   *     tracking-a-forgotten-file/
+   *
+   * becomes:
+   *
+   * /scenarios/git-foundations/tracking-a-forgotten-file/setup.sh
+   */
+
+  const relativePath = path
+    .relative(
+      scenariosPath,
+      scenarioDirectory
+    )
+    .split(path.sep)
+    .join("/");
+
   return executeCommand(
     containerId,
-    `bash /scenarios/${scenarioId}/setup.sh`
+    `bash /scenarios/${relativePath}/setup.sh`
   );
 };
 
@@ -97,12 +135,12 @@ const startTerminal = (containerId) => {
    *   ↓
    * bash -i
    *
-   * We keep cmd.exe here because Docker is
-   * resolved correctly through the Windows
-   * PATH in this environment.
+   * Keep this structure because it works
+   * correctly with the current Windows setup.
    */
 
-  const command = `docker exec -it ${containerId} bash -i`;
+  const command =
+    `docker exec -it ${containerId} bash -i`;
 
   const terminal = pty.spawn(
     process.env.ComSpec ||
