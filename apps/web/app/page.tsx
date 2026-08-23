@@ -7,6 +7,7 @@ type Scenario = {
   description: string;
   estimatedTime: string;
   category: string;
+  createdAt: string;
 };
 
 const categories = [
@@ -48,7 +49,13 @@ export default async function Home() {
   const scenarios: Scenario[] = await response.json();
 
   const featured = scenarios.slice(0, 3);
-  const recentlyAdded = scenarios.slice(-3).reverse();
+  const recentlyAdded = [...scenarios]
+  .sort(
+    (a, b) =>
+      new Date(b.createdAt).getTime() -
+      new Date(a.createdAt).getTime()
+  )
+  .slice(0, 2);
 
   return (
     <main className="min-h-screen bg-[#0d1117] text-white">
