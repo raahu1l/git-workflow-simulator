@@ -1,0 +1,65 @@
+{
+  "id": "commit-history",
+  "title": "Write a Commit History That Makes Sense",
+  "difficulty": "Beginner",
+  "category": "git-foundations",
+  "description": "Make three independent changes and record each one as a separate, meaningful commit.",
+  "estimatedTime": "7 min",
+
+  "tasks": [
+    {
+      "id": "bugFixCommit",
+      "label": "Create the bug-fix commit",
+      "compactLabel": "Bug-fix commit"
+    },
+    {
+      "id": "helperCommit",
+      "label": "Create the helper-function commit",
+      "compactLabel": "Helper commit"
+    },
+    {
+      "id": "formattingCommit",
+      "label": "Create the formatting cleanup commit",
+      "compactLabel": "Formatting commit"
+    }
+  ],
+
+  "hints": [
+  "Start with the first change described in utils.py. Once you have made only that change, review the diff, stage that change, and create a commit before touching the next task.",
+  "Each commit should represent one logical change. Before committing, check what is staged so you don't accidentally include the helper function or formatting cleanup in the bug-fix commit."
+],
+
+  "alex": {
+    "intro": {
+      "emotion": "talking",
+      "message": "Sarah wants this history to be easy to review. There are three small changes to make to utils.py. Keep each change in its own commit."
+    },
+
+    "situations": {
+      "bugFixCommit": {
+        "emotion": "happy",
+        "message": "Nice. The bug fix has its own commit."
+      },
+
+      "helperCommit": {
+        "emotion": "happy",
+        "message": "Good. The new helper is separated cleanly from the previous change."
+      },
+
+      "formattingCommit": {
+        "emotion": "celebrating",
+        "message": "Perfect. The formatting cleanup has its own boundary too."
+      }
+    },
+
+    "success": {
+      "emotion": "celebrating",
+      "message": "This is exactly the kind of history I like reviewing. Clean, easy to follow, and easy to revert if needed."
+    },
+
+    "failure": {
+      "emotion": "concerned",
+      "message": "The history isn't quite right yet. Check that each logical change has its own commit and that the commits are in the correct order."
+    }
+  }
+}
