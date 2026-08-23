@@ -61,9 +61,13 @@ const getAllScenarios = () => {
       .filter((entry) => entry.isDirectory());
 
     for (const scenarioFolder of scenarioFolders) {
-      const scenarioFile = path.join(
+      const scenarioDirectory = path.join(
         categoryPath,
-        scenarioFolder.name,
+        scenarioFolder.name
+      );
+
+      const scenarioFile = path.join(
+        scenarioDirectory,
         "scenario.json"
       );
 
@@ -80,9 +84,15 @@ const getAllScenarios = () => {
         scenarioData
       );
 
+      const scenarioStats = fs.statSync(
+        scenarioDirectory
+      );
+
       scenarios.push({
         ...scenario,
         category: category.name,
+        createdAt:
+          scenarioStats.birthtime.toISOString(),
       });
     }
   }
