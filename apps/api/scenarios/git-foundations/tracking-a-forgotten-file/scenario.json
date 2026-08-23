@@ -23,12 +23,11 @@
       "compactLabel": "Clean working tree"
     }
   ],
-
-  "hints": [
-    "Use git status to find files that Git is not tracking.",
-    "Stage the forgotten file with git add project-notes.txt.",
-    "After committing, use git status to make sure the working tree is clean."
-  ],
+  
+"hints": [
+  "Git can show you the difference between files it is already tracking and files that exist in the workspace but have not been added to the repository yet. Look closely at the status output.",
+  "Once you identify the forgotten file, make sure it is staged before creating the commit. After the commit, verify that Git no longer reports any pending changes."
+],
 
   "alex": {
     "intro": {
