@@ -2,7 +2,15 @@ const crypto = require("crypto");
 
 const { sessions } = require("../store/sessions");
 
-const createSandbox = (scenarioId, containerId) => {
+/* =========================================
+   CREATE SANDBOX
+========================================= */
+
+const createSandbox = (
+  scenarioId,
+  containerId = null,
+  status = "created"
+) => {
   const sessionId = crypto.randomUUID();
 
   const createdAt = new Date();
@@ -14,7 +22,7 @@ const createSandbox = (scenarioId, containerId) => {
   const sandbox = {
     sessionId,
     scenarioId,
-    status: "created",
+    status,
     createdAt: createdAt.toISOString(),
     expiresAt: expiresAt.toISOString(),
     containerId,
@@ -25,9 +33,17 @@ const createSandbox = (scenarioId, containerId) => {
   return sandbox;
 };
 
+/* =========================================
+   GET SANDBOX
+========================================= */
+
 const getSandbox = (sessionId) => {
   return sessions[sessionId];
 };
+
+/* =========================================
+   UPDATE SANDBOX STATUS
+========================================= */
 
 const updateSandboxStatus = (
   sessionId,
@@ -44,6 +60,10 @@ const updateSandboxStatus = (
   return sandbox;
 };
 
+/* =========================================
+   RESET SANDBOX
+========================================= */
+
 const resetSandbox = (sessionId) => {
   const sandbox = sessions[sessionId];
 
@@ -55,6 +75,10 @@ const resetSandbox = (sessionId) => {
 
   return sandbox;
 };
+
+/* =========================================
+   DELETE SANDBOX
+========================================= */
 
 const deleteSandbox = (sessionId) => {
   const sandbox = sessions[sessionId];
