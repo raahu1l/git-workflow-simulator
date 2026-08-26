@@ -2,13 +2,17 @@
 
 cd /workspace
 
-# Initialize repository
+# Completely reset the workspace.
+find /workspace -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
+
+# Initialize repository.
 git init
 
+# Configure Git identity.
 git config user.name "Student"
 git config user.email "student@example.com"
 
-# Initial file
+# Create initial file.
 cat <<EOF > README.md
 # Git Merge Conflict
 
@@ -17,12 +21,13 @@ Line 2
 Line 3
 EOF
 
-git add .
+git add README.md
 git commit -m "Initial commit"
 
-# Create feature branch
+# Create feature branch.
 git checkout -b feature
 
+# Make a conflicting change on feature.
 cat <<EOF > README.md
 # Git Merge Conflict
 
@@ -34,9 +39,10 @@ EOF
 git add README.md
 git commit -m "Feature changes"
 
-# Back to main
+# Return to main branch.
 git checkout master
 
+# Make a conflicting change on master.
 cat <<EOF > README.md
 # Git Merge Conflict
 
@@ -52,7 +58,13 @@ echo ""
 echo "========================================="
 echo "Your task:"
 echo ""
-echo "Merge the 'feature' branch into the current branch."
-echo "Resolve the merge conflict."
-echo "Commit the merge."
+echo "Merge the feature branch into master."
+echo "A merge conflict will occur because both"
+echo "branches changed the same line."
+echo ""
+echo "Resolve the conflict by deciding what"
+echo "the final README.md should contain."
+echo ""
+echo "After resolving the conflict, complete"
+echo "the merge and leave the working tree clean."
 echo "========================================="
