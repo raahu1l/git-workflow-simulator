@@ -1,4 +1,5 @@
 const WebSocket = require("ws");
+
 const { execFile } = require("child_process");
 
 const {
@@ -9,6 +10,10 @@ const {
   startTerminal,
 } = require("./services/docker.service");
 
+const {
+  recordSandboxAction,
+} = require("./services/sandbox.service");
+
 const setupWebSocket = (server) => {
   const wss = new WebSocket.Server({ server });
 
@@ -18,6 +23,20 @@ const setupWebSocket = (server) => {
     let terminal = null;
     let terminalSessionId = null;
     let shuttingDown = false;
+
+    /*
+     * =========================================
+     * COMMAND BUFFER
+     * =========================================
+     *
+     * Stores what the learner is typing until
+     * Enter is pressed.
+     *
+     * This is intentionally generic.
+     * The WebSocket layer does NOT know anything
+     * about Git or individual scenarios.
+     */
+    let commandBuffer = "";
 
     ws.send(
       JSON.stringify({
@@ -48,6 +67,48 @@ const setupWebSocket = (server) => {
     };
 
     /* =========================================
+       RECORD SUBMITTED COMMAND
+    ========================================== */
+
+    const recordSubmittedCommand = (
+      sessionId
+    ) => {
+      const command = commandBuffer.trim();
+
+      commandBuffer = "";
+
+      if (!command) {
+        return;
+      }
+
+      /*
+       * Ignore terminal escape sequences or
+       * other non-command input.
+       *
+       * We only record normal submitted text.
+       */
+      const cleanedCommand = command
+        .replace(
+          /\x1b\[[0-9;?]*[ -/]*[@-~]/g,
+          ""
+        )
+        .trim();
+
+      if (!cleanedCommand) {
+        return;
+      }
+
+      console.log(
+        `Learner command [${sessionId}]: ${cleanedCommand}`
+      );
+
+      recordSandboxAction(
+        sessionId,
+        cleanedCommand
+      );
+    };
+
+    /* =========================================
        DESTROY TERMINAL SAFELY
     ========================================== */
 
@@ -59,28 +120,19 @@ const setupWebSocket = (server) => {
         return;
       }
 
-      /*
-       * Invalidate the terminal FIRST.
-       *
-       * This prevents late PTY events from
-       * interfering with a future terminal.
-       */
       terminal = null;
       terminalSessionId = null;
 
       /*
-       * IMPORTANT:
-       *
-       * Do NOT call oldTerminal.kill() on Windows.
-       *
-       * node-pty's Windows kill() enters
-       * _getConsoleProcessList(), which is the
-       * code currently crashing in your setup.
-       *
-       * Instead, terminate the Windows process
-       * tree directly.
+       * Clear command state when the terminal
+       * itself is destroyed.
        */
+      commandBuffer = "";
 
+      /*
+       * Windows:
+       * terminate process tree directly.
+       */
       if (process.platform === "win32") {
         const pid = oldTerminal.pid;
 
@@ -107,12 +159,8 @@ const setupWebSocket = (server) => {
           {
             windowsHide: true,
           },
-          (error, stdout, stderr) => {
+          (error) => {
             if (error) {
-              /*
-               * The process may already have exited.
-               * Do not crash the server.
-               */
               console.log(
                 `Terminal process cleanup finished: ${error.message}`
               );
@@ -130,10 +178,7 @@ const setupWebSocket = (server) => {
       }
 
       /*
-       * Linux/macOS:
-       * node-pty kill() is fine because the
-       * Windows-specific getConsoleProcessList()
-       * problem does not apply.
+       * Linux/macOS
        */
       try {
         oldTerminal.kill();
@@ -154,7 +199,7 @@ const setupWebSocket = (server) => {
       }
 
       /*
-       * Reuse terminal for the same session.
+       * Reuse terminal for same session.
        */
       if (
         terminal &&
@@ -164,7 +209,7 @@ const setupWebSocket = (server) => {
       }
 
       /*
-       * A WebSocket owns only one terminal.
+       * One terminal per WebSocket.
        */
       if (terminal) {
         destroyTerminal();
@@ -205,14 +250,16 @@ const setupWebSocket = (server) => {
       terminal = newTerminal;
       terminalSessionId = sessionId;
 
+      /*
+       * Fresh terminal means fresh input buffer.
+       */
+      commandBuffer = "";
+
       /* =========================================
          PTY OUTPUT → WEBSOCKET
       ========================================== */
 
       newTerminal.onData((output) => {
-        /*
-         * Ignore output from stale terminals.
-         */
         if (
           shuttingDown ||
           terminal !== newTerminal ||
@@ -250,16 +297,13 @@ const setupWebSocket = (server) => {
             }`
           );
 
-          /*
-           * Ignore exit events belonging to an
-           * older terminal.
-           */
           if (terminal !== newTerminal) {
             return;
           }
 
           terminal = null;
           terminalSessionId = null;
+          commandBuffer = "";
 
           if (
             !shuttingDown &&
@@ -333,8 +377,75 @@ const setupWebSocket = (server) => {
             return;
           }
 
+          /*
+           * =====================================
+           * GENERIC COMMAND TRACKING
+           * =====================================
+           *
+           * Record the command when Enter is
+           * pressed.
+           *
+           * We don't record every keystroke.
+           */
+
+          const input = data.data;
+
+          /*
+           * Ctrl+C:
+           * cancel the current command buffer.
+           */
+          if (input.includes("\u0003")) {
+            commandBuffer = "";
+          }
+
+          /*
+           * Backspace.
+           */
+          if (
+            input.includes("\u007f") ||
+            input.includes("\b")
+          ) {
+            commandBuffer =
+              commandBuffer.slice(
+                0,
+                -1
+              );
+          }
+
+          /*
+           * Add normal printable characters.
+           *
+           * Ignore escape sequences used by
+           * arrows/function keys.
+           */
+          const printable = input
+            .replace(
+              /\x1b\[[0-9;?]*[ -/]*[@-~]/g,
+              ""
+            )
+            .replace(
+              /[\r\n\u0003\u007f\b]/g,
+              ""
+            );
+
+          if (printable) {
+            commandBuffer += printable;
+          }
+
+          /*
+           * Enter submits the command.
+           */
+          if (
+            input.includes("\r") ||
+            input.includes("\n")
+          ) {
+            recordSubmittedCommand(
+              data.sessionId
+            );
+          }
+
           try {
-            pty.write(data.data);
+            pty.write(input);
           } catch (error) {
             if (!shuttingDown) {
               console.error(
@@ -360,8 +471,13 @@ const setupWebSocket = (server) => {
             return;
           }
 
-          const cols = Number(data.cols);
-          const rows = Number(data.rows);
+          const cols = Number(
+            data.cols
+          );
+
+          const rows = Number(
+            data.rows
+          );
 
           if (
             !Number.isInteger(cols) ||
@@ -420,12 +536,10 @@ const setupWebSocket = (server) => {
     ========================================== */
 
     ws.on("close", () => {
-      console.log("Client disconnected");
+      console.log(
+        "Client disconnected"
+      );
 
-      /*
-       * Invalidate the socket BEFORE touching
-       * the PTY.
-       */
       shuttingDown = true;
 
       destroyTerminal();
