@@ -26,6 +26,19 @@ const createSandbox = (
     createdAt: createdAt.toISOString(),
     expiresAt: expiresAt.toISOString(),
     containerId,
+
+    /*
+     * Generic learner action history.
+     *
+     * Scenarios can use this to determine
+     * whether the learner actually performed
+     * an important action.
+     *
+     * Example:
+     * ["git branch -m fix-login-validation",
+     *  "git log --oneline"]
+     */
+    actions: [],
   };
 
   sessions[sessionId] = sandbox;
@@ -61,6 +74,36 @@ const updateSandboxStatus = (
 };
 
 /* =========================================
+   RECORD LEARNER ACTION
+========================================= */
+
+const recordSandboxAction = (
+  sessionId,
+  action
+) => {
+  const sandbox = sessions[sessionId];
+
+  if (!sandbox) {
+    return null;
+  }
+
+  if (
+    typeof action !== "string" ||
+    !action.trim()
+  ) {
+    return sandbox;
+  }
+
+  if (!Array.isArray(sandbox.actions)) {
+    sandbox.actions = [];
+  }
+
+  sandbox.actions.push(action.trim());
+
+  return sandbox;
+};
+
+/* =========================================
    RESET SANDBOX
 ========================================= */
 
@@ -72,6 +115,12 @@ const resetSandbox = (sessionId) => {
   }
 
   sandbox.status = "created";
+
+  /*
+   * A fresh scenario means a fresh action
+   * history as well.
+   */
+  sandbox.actions = [];
 
   return sandbox;
 };
@@ -96,6 +145,7 @@ module.exports = {
   createSandbox,
   getSandbox,
   updateSandboxStatus,
+  recordSandboxAction,
   resetSandbox,
   deleteSandbox,
 };

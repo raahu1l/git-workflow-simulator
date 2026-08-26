@@ -17,11 +17,6 @@ const {
 ========================================= */
 
 const loadScenarioModule = (modulePath) => {
-  /*
-   * Scenario files can be changed while the API
-   * server is running. Remove the cached module so
-   * validation/progress always uses the current file.
-   */
   try {
     delete require.cache[
       require.resolve(modulePath)
@@ -46,10 +41,6 @@ const validateScenario = async (
     return null;
   }
 
-  /*
-   * Do not validate while the workspace is being
-   * rebuilt.
-   */
   if (sandbox.status === "resetting") {
     return {
       success: false,
@@ -74,12 +65,25 @@ const validateScenario = async (
   );
 
   const validator =
-    loadScenarioModule(validatorPath);
+    loadScenarioModule(
+      validatorPath
+    );
 
   const result = await validator({
     executeCommand,
     containerId:
       sandbox.containerId,
+
+    /*
+     * Generic learner action history.
+     *
+     * Existing scenarios don't have to use it.
+     */
+    actions: Array.isArray(
+      sandbox.actions
+    )
+      ? sandbox.actions
+      : [],
   });
 
   return result;
@@ -98,12 +102,6 @@ const getScenarioProgress = async (
     return null;
   }
 
-  /*
-   * Reset is an expected temporary state.
-   *
-   * The frontend should simply display 0 progress
-   * while setup.sh rebuilds the workspace.
-   */
   if (sandbox.status === "resetting") {
     return {};
   }
@@ -123,12 +121,23 @@ const getScenarioProgress = async (
   );
 
   const progress =
-    loadScenarioModule(progressPath);
+    loadScenarioModule(
+      progressPath
+    );
 
   const result = await progress({
     executeCommand,
     containerId:
       sandbox.containerId,
+
+    /*
+     * Generic action history.
+     */
+    actions: Array.isArray(
+      sandbox.actions
+    )
+      ? sandbox.actions
+      : [],
   });
 
   return result;
