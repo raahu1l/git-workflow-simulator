@@ -13,6 +13,27 @@ const {
 } = require("./scenario.service");
 
 /* =========================================
+   LOAD SCENARIO MODULE FRESH
+========================================= */
+
+const loadScenarioModule = (modulePath) => {
+  /*
+   * Scenario files can be changed while the API
+   * server is running. Remove the cached module so
+   * validation/progress always uses the current file.
+   */
+  try {
+    delete require.cache[
+      require.resolve(modulePath)
+    ];
+  } catch {
+    // Module was not cached yet.
+  }
+
+  return require(modulePath);
+};
+
+/* =========================================
    VALIDATE SCENARIO
 ========================================= */
 
@@ -52,9 +73,8 @@ const validateScenario = async (
     "validate.js"
   );
 
-  const validator = require(
-    validatorPath
-  );
+  const validator =
+    loadScenarioModule(validatorPath);
 
   const result = await validator({
     executeCommand,
@@ -102,9 +122,8 @@ const getScenarioProgress = async (
     "progress.js"
   );
 
-  const progress = require(
-    progressPath
-  );
+  const progress =
+    loadScenarioModule(progressPath);
 
   const result = await progress({
     executeCommand,

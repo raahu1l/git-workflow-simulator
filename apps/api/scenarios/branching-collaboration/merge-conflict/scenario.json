@@ -1,0 +1,66 @@
+{
+  "id": "merge-conflict",
+  "title": "Resolve a Merge Conflict",
+  "difficulty": "Beginner",
+  "category": "branching-collaboration",
+  "description": "Merge a feature branch into the main branch and resolve the conflict that occurs when both branches modify the same line.",
+  "estimatedTime": "7 min",
+
+  "tasks": [
+    {
+      "id": "startMerge",
+      "label": "Start the feature branch merge",
+      "compactLabel": "Start merge"
+    },
+    {
+      "id": "resolveConflict",
+      "label": "Resolve the merge conflict",
+      "compactLabel": "Resolve conflict"
+    },
+    {
+      "id": "completeMerge",
+      "label": "Complete the merge with a commit",
+      "compactLabel": "Complete merge"
+    }
+  ],
+
+  "hints": [
+    "Both branches changed the same part of README.md. After starting the merge, inspect the conflict markers to understand what Git is asking you to decide.",
+    "A resolved file should no longer contain conflict markers. Once you are satisfied with the final content, stage the resolved file and complete the merge.",
+    "Use Git's status and diff information to confirm whether the conflict is still unresolved before finishing the merge."
+  ],
+
+  "alex": {
+    "intro": {
+      "emotion": "thinking",
+      "message": "The feature branch has useful work, but both branches changed the same line. Merge it into the main branch and sort out the conflict."
+    },
+
+    "situations": {
+      "startMerge": {
+        "emotion": "talking",
+        "message": "The merge has started. Git found changes that it can't combine automatically."
+      },
+
+      "resolveConflict": {
+        "emotion": "happy",
+        "message": "Nice. The conflict has been resolved. Make sure Git recognizes the file as resolved."
+      },
+
+      "completeMerge": {
+        "emotion": "celebrating",
+        "message": "Great! The branches are merged and the conflict is behind us."
+      }
+    },
+
+    "success": {
+      "emotion": "celebrating",
+      "message": "Nice work! You handled the conflict and completed the merge successfully."
+    },
+
+    "failure": {
+      "emotion": "concerned",
+      "message": "The merge isn't complete yet. Check the merge state and make sure the conflict has been resolved before finishing."
+    }
+  }
+}
