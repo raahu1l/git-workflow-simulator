@@ -21,6 +21,17 @@ export default function SessionPage() {
   const [scenario, setScenario] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  /*
+   * =========================================
+   * SANDBOX STARTUP STATUS
+   * =========================================
+   *
+   * The session can now exist before Docker
+   * and setup.sh have finished.
+   */
+  const [sandboxStatus, setSandboxStatus] =
+    useState("starting");
+
   const [validation, setValidation] = useState(null);
   const [checking, setChecking] = useState(false);
 
@@ -44,6 +55,9 @@ export default function SessionPage() {
   ====================================================== */
 
   useEffect(() => {
+    let cancelled = false;
+    let startupInterval = null;
+
     const loadScenario = async () => {
       try {
         const sessionResponse = await fetch(
@@ -62,6 +76,14 @@ export default function SessionPage() {
         const sessionData =
           await sessionResponse.json();
 
+        if (cancelled) {
+          return;
+        }
+
+        setSandboxStatus(
+          sessionData.status
+        );
+
         const scenarioResponse = await fetch(
           `http://localhost:5000/api/scenarios/${sessionData.scenarioId}`,
           {
@@ -78,6 +100,10 @@ export default function SessionPage() {
         const scenarioData =
           await scenarioResponse.json();
 
+        if (cancelled) {
+          return;
+        }
+
         setScenario(scenarioData);
       } catch (error) {
         console.error(
@@ -85,13 +111,87 @@ export default function SessionPage() {
           error
         );
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    const checkSandboxStatus = async () => {
+      if (cancelled) {
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `http://localhost:5000/api/sessions/${sessionId}`,
+          {
+            cache: "no-store",
+          }
+        );
+
+        if (!response.ok) {
+          return;
+        }
+
+        const data =
+          await response.json();
+
+        if (cancelled) {
+          return;
+        }
+
+        setSandboxStatus(data.status);
+
+        /*
+         * Stop polling once the scenario is
+         * ready or has failed.
+         */
+        if (
+          data.status === "created" ||
+          data.status === "failed"
+        ) {
+          if (startupInterval) {
+            clearInterval(
+              startupInterval
+            );
+
+            startupInterval = null;
+          }
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.warn(
+            "Failed to check sandbox status:",
+            error
+          );
+        }
       }
     };
 
     if (sessionId) {
       loadScenario();
+
+      /*
+       * Start polling immediately.
+       *
+       * This is only for the initial scenario
+       * preparation. Reset/Retry does not use
+       * this flow.
+       */
+      startupInterval = setInterval(
+        checkSandboxStatus,
+        500
+      );
     }
+
+    return () => {
+      cancelled = true;
+
+      if (startupInterval) {
+        clearInterval(startupInterval);
+      }
+    };
   }, [sessionId]);
 
   /* =====================================================
@@ -110,6 +210,7 @@ export default function SessionPage() {
       if (previousProgress === null) {
         previousProgressRef.current =
           progress;
+
         return;
       }
 
@@ -405,6 +506,59 @@ export default function SessionPage() {
   const alexFailure =
     scenario.alex?.failure;
 
+  /*
+   * =========================================
+   * TERMINAL CONTENT
+   * =========================================
+   *
+   * During initial startup, do not mount
+   * Terminal. This prevents the terminal from
+   * trying to connect before Docker/setup.sh
+   * has finished.
+   *
+   * Reset/Retry still use terminalRefreshKey
+   * exactly as before.
+   */
+
+  const terminalContent = (
+    <div className="relative min-h-0 flex-1 overflow-hidden">
+      {sandboxStatus === "created" ? (
+        <Terminal
+          key={`terminal-${terminalRefreshKey}`}
+          sessionId={sessionId}
+          resetting={resetting}
+        />
+      ) : sandboxStatus === "failed" ? (
+        <div className="flex h-full items-center justify-center bg-[#0d1117]">
+          <div className="text-center">
+            <p className="text-xs font-medium text-[#f85149]">
+              Failed to prepare workspace
+            </p>
+
+            <p className="mt-1 text-[10px] text-[#8b949e]">
+              Please return to Browse and try
+              starting the scenario again.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className="flex h-full items-center justify-center bg-[#0d1117]">
+          <div className="text-center">
+            <div className="mx-auto mb-3 h-5 w-5 animate-spin rounded-full border-2 border-[#30363d] border-t-[#58a6ff]" />
+
+            <p className="text-xs font-medium text-[#f0f6fc]">
+              Preparing workspace...
+            </p>
+
+            <p className="mt-1 text-[10px] text-[#8b949e]">
+              Your scenario is being prepared
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <main className="relative h-[100dvh] overflow-hidden bg-[#0d1117] text-[#f0f6fc]">
 
@@ -598,15 +752,7 @@ export default function SessionPage() {
 
             </div>
 
-            <div className="relative min-h-0 flex-1 overflow-hidden">
-
-              <Terminal
-                key={`desktop-terminal-${terminalRefreshKey}`}
-                sessionId={sessionId}
-                resetting={resetting}
-              />
-
-            </div>
+            {terminalContent}
 
           </div>
 
@@ -690,15 +836,7 @@ export default function SessionPage() {
 
             </div>
 
-            <div className="relative min-h-0 flex-1 overflow-hidden">
-
-              <Terminal
-                key={`mobile-terminal-${terminalRefreshKey}`}
-                sessionId={sessionId}
-                resetting={resetting}
-              />
-
-            </div>
+            {terminalContent}
 
           </div>
 
