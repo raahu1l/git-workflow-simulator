@@ -1,0 +1,63 @@
+{
+  "id": "clean-merge",
+  "title": "A Clean Merge",
+  "difficulty": "Beginner",
+  "category": "branching-collaboration",
+  "description": "Merge the completed search feature into main without introducing conflicts.",
+  "estimatedTime": "5 min",
+
+  "tasks": [
+  {
+    "id": "switchToMain",
+    "label": "Switch to the main branch",
+    "compactLabel": "Switch to main"
+  },
+  {
+    "id": "mergeFeature",
+    "label": "Merge the search feature into main",
+    "compactLabel": "Merge feature"
+  },
+  {
+  "id": "deleteFeatureBranch",
+  "label": "Clean up the merged feature branch",
+  "compactLabel": "Clean up branch"
+  }
+],
+
+ "hints": [
+  "The search feature is complete on feature/search. Switch to main before integrating the feature into the main history.",
+  "Once the feature has been merged into main, the feature branch is no longer needed and can be cleaned up."
+],
+
+  "alex": {
+    "intro": {
+      "emotion": "talking",
+      "message": "Sarah reviewed the search feature and says it's ready. Bring the feature branch into main so it's ready for the next deploy."
+    },
+
+    "situations": {
+      "switchToMain": {
+        "emotion": "happy",
+        "message": "Good. You're on the branch that should receive the search feature."
+      },
+      "mergeFeature": {
+        "emotion": "celebrating",
+        "message": "Nice. The search feature is now integrated into main."
+      },
+      "cleanWorkingTree": {
+        "emotion": "happy",
+        "message": "Perfect. The repository is clean and ready for the next step."
+      }
+    },
+
+    "success": {
+      "emotion": "celebrating",
+      "message": "Merged and confirmed. That search feature is officially part of main now."
+    },
+
+    "failure": {
+      "emotion": "concerned",
+      "message": "The search feature isn't fully integrated into main yet. Check the current branch, merge state, and repository history."
+    }
+  }
+}

@@ -1,9 +1,13 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+
 import "xterm/css/xterm.css";
 
-export default function Terminal({ sessionId }) {
+export default function Terminal({
+  sessionId,
+  resetting = false,
+}) {
   const terminalRef = useRef(null);
   const socketRef = useRef(null);
   const terminalInstanceRef = useRef(null);
@@ -14,19 +18,20 @@ export default function Terminal({ sessionId }) {
     let resizeObserver = null;
     let dataDisposable = null;
 
-    // Prevent stale async initialization from creating
-    // a terminal after this component has already unmounted.
     let destroyed = false;
-
-    // Once cleanup starts, no more input or resize
-    // messages should be sent to the old socket.
     let shuttingDown = false;
 
     const init = async () => {
-      const { Terminal: XTerm } = await import("xterm");
-      const { FitAddon } = await import("xterm-addon-fit");
+      const { Terminal: XTerm } =
+        await import("xterm");
 
-      if (destroyed || !terminalRef.current) {
+      const { FitAddon } =
+        await import("xterm-addon-fit");
+
+      if (
+        destroyed ||
+        !terminalRef.current
+      ) {
         return;
       }
 
@@ -36,19 +41,18 @@ export default function Terminal({ sessionId }) {
         lineHeight: 1.2,
         scrollback: 1000,
         convertEol: false,
-
         theme: {
           background: "#0d1117",
           foreground: "#f0f6fc",
           cursor: "#f0f6fc",
         },
-
         cursorStyle: "block",
       });
 
       const fitAddon = new FitAddon();
 
       terminal.loadAddon(fitAddon);
+
       terminal.open(terminalRef.current);
 
       if (destroyed) {
@@ -60,19 +64,36 @@ export default function Terminal({ sessionId }) {
       terminalInstanceRef.current = terminal;
 
       /*
-       * IMPORTANT:
-       * Explicitly focus xterm after it has been mounted.
-       * This is especially important after Reset/Retry because
-       * the Terminal component is remounted.
+       * During reset, create only the visual terminal.
+       *
+       * Do NOT create a WebSocket or PTY yet.
        */
+      if (resetting) {
+        terminal.clear();
+
+        terminal.writeln(
+          "\x1b[36mResetting workspace...\x1b[0m"
+        );
+
+        terminal.writeln(
+          "\x1b[90mPreparing a fresh scenario.\x1b[0m"
+        );
+
+        return;
+      }
+
       requestAnimationFrame(() => {
-        if (!destroyed && !shuttingDown && terminal) {
+        if (
+          !destroyed &&
+          !shuttingDown &&
+          terminal
+        ) {
           terminal.focus();
         }
       });
 
       /* =========================================
-         INITIAL TERMINAL SIZE
+         TERMINAL SIZE
       ========================================== */
 
       const fitTerminal = () => {
@@ -81,7 +102,8 @@ export default function Terminal({ sessionId }) {
           shuttingDown ||
           !terminal ||
           !socket ||
-          socket.readyState !== WebSocket.OPEN
+          socket.readyState !==
+            WebSocket.OPEN
         ) {
           return;
         }
@@ -111,19 +133,30 @@ export default function Terminal({ sessionId }) {
          WEBSOCKET
       ========================================== */
 
-      socket = new WebSocket("ws://localhost:5000");
+      socket = new WebSocket(
+        "ws://localhost:5000"
+      );
 
       socketRef.current = socket;
 
       socket.onopen = () => {
-        if (destroyed || shuttingDown) {
+        if (
+          destroyed ||
+          shuttingDown
+        ) {
           return;
         }
 
-        terminal?.writeln("Connecting...");
+        terminal?.writeln(
+          "Connecting..."
+        );
 
         requestAnimationFrame(() => {
-          if (!destroyed && !shuttingDown && terminal) {
+          if (
+            !destroyed &&
+            !shuttingDown &&
+            terminal
+          ) {
             terminal.focus();
           }
 
@@ -141,13 +174,16 @@ export default function Terminal({ sessionId }) {
         }
 
         try {
-          const message = JSON.parse(event.data);
+          const message =
+            JSON.parse(event.data);
 
           switch (message.type) {
             case "info":
             case "output":
             case "error":
-              terminal.write(message.data);
+              terminal.write(
+                message.data
+              );
               break;
 
             default:
@@ -179,8 +215,6 @@ export default function Terminal({ sessionId }) {
       };
 
       socket.onclose = () => {
-        // Do not print "Disconnected" during an intentional
-        // reset/remount.
         if (
           !destroyed &&
           !shuttingDown &&
@@ -193,36 +227,39 @@ export default function Terminal({ sessionId }) {
       };
 
       /* =========================================
-         TERMINAL INPUT → WEBSOCKET
+         TERMINAL INPUT
       ========================================== */
 
-      dataDisposable = terminal.onData((data) => {
-        if (
-          destroyed ||
-          shuttingDown ||
-          !socket ||
-          socket.readyState !== WebSocket.OPEN
-        ) {
-          return;
-        }
-
-        try {
-          socket.send(
-            JSON.stringify({
-              type: "input",
-              sessionId,
-              data,
-            })
-          );
-        } catch (error) {
-          if (!shuttingDown) {
-            console.error(
-              "Terminal input error:",
-              error
-            );
+      dataDisposable =
+        terminal.onData((data) => {
+          if (
+            destroyed ||
+            shuttingDown ||
+            resetting ||
+            !socket ||
+            socket.readyState !==
+              WebSocket.OPEN
+          ) {
+            return;
           }
-        }
-      });
+
+          try {
+            socket.send(
+              JSON.stringify({
+                type: "input",
+                sessionId,
+                data,
+              })
+            );
+          } catch (error) {
+            if (!shuttingDown) {
+              console.error(
+                "Terminal input error:",
+                error
+              );
+            }
+          }
+        });
 
       /* =========================================
          RESIZE OBSERVER
@@ -274,18 +311,14 @@ export default function Terminal({ sessionId }) {
     ========================================== */
 
     return () => {
-      // FIRST: completely disable the old terminal.
       destroyed = true;
       shuttingDown = true;
 
-      // Stop resize events immediately.
       if (resizeObserver) {
         resizeObserver.disconnect();
         resizeObserver = null;
       }
 
-      // Stop sending keyboard input BEFORE
-      // touching the WebSocket.
       if (dataDisposable) {
         try {
           dataDisposable.dispose();
@@ -299,15 +332,17 @@ export default function Terminal({ sessionId }) {
         dataDisposable = null;
       }
 
-      // Prevent any future code from using the old socket.
       const oldSocket = socket;
+
       socket = null;
 
-      if (socketRef.current === oldSocket) {
+      if (
+        socketRef.current ===
+        oldSocket
+      ) {
         socketRef.current = null;
       }
 
-      // Close the old WebSocket cleanly.
       if (oldSocket) {
         try {
           oldSocket.onopen = null;
@@ -332,7 +367,6 @@ export default function Terminal({ sessionId }) {
         }
       }
 
-      // Finally dispose the xterm instance.
       if (terminal) {
         try {
           terminal.dispose();
@@ -346,17 +380,20 @@ export default function Terminal({ sessionId }) {
         terminal = null;
       }
 
-      terminalInstanceRef.current = null;
+      terminalInstanceRef.current =
+        null;
     };
-  }, [sessionId]);
+  }, [sessionId, resetting]);
 
   return (
     <div
       ref={terminalRef}
       onClick={() => {
-        terminalInstanceRef.current?.focus();
+        if (!resetting) {
+          terminalInstanceRef.current?.focus();
+        }
       }}
-      className="h-full w-full overflow-hidden bg-[#0d1117] p-2"
+      className="relative h-full w-full overflow-hidden bg-[#0d1117] p-2"
     />
   );
 }

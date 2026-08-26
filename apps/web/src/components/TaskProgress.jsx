@@ -11,21 +11,58 @@ export default function TaskProgress({
   tasks = [],
   compact = false,
   onProgressChange,
+  resetting = false,
 }) {
   const [progress, setProgress] = useState({});
   const [error, setError] = useState(false);
 
-  /*
-   * Keep the latest progress available without
-   * triggering React state updates during render.
-   */
   const progressRef = useRef({});
+
+  /* =========================================
+     RESET LOCAL PROGRESS
+  ========================================== */
+
+  useEffect(() => {
+    if (!resetting) {
+      return;
+    }
+
+    /*
+     * Reset the visual task state immediately.
+     *
+     * More importantly, the polling effect below
+     * will not contact the backend while the
+     * scenario is being rebuilt.
+     */
+
+    progressRef.current = {};
+    setProgress({});
+    setError(false);
+  }, [resetting]);
+
+  /* =========================================
+     FETCH PROGRESS
+  ========================================== */
 
   useEffect(() => {
     let cancelled = false;
 
+    /*
+     * Do not poll while Reset / Retry /
+     * Restart Scenario is running.
+     */
+    if (
+      !sessionId ||
+      resetting
+    ) {
+      return;
+    }
+
     const fetchProgress = async () => {
-      if (!sessionId || cancelled) {
+      if (
+        cancelled ||
+        resetting
+      ) {
         return;
       }
 
@@ -46,6 +83,15 @@ export default function TaskProgress({
         }
 
         if (!response.ok) {
+          /*
+           * A temporary 404 can happen while a session
+           * is transitioning. Do not turn that into a
+           * noisy React/Next development error.
+           */
+          if (response.status === 404) {
+            return;
+          }
+
           const message =
             data?.message ||
             `Progress request failed (${response.status})`;
@@ -63,22 +109,13 @@ export default function TaskProgress({
           );
         }
 
-        if (cancelled) {
+        if (
+          cancelled ||
+          resetting
+        ) {
           return;
         }
 
-        /*
-         * Merge the new backend state with the
-         * already-achieved tasks.
-         *
-         * This makes task progression monotonic:
-         *
-         * false → true
-         *
-         * but never:
-         *
-         * true → false
-         */
         const previousProgress =
           progressRef.current;
 
@@ -90,43 +127,34 @@ export default function TaskProgress({
             data[task.id] === true;
         }
 
-        /*
-         * Store the merged state in the ref first.
-         */
         progressRef.current =
           mergedProgress;
 
-        /*
-         * Then update React state.
-         */
         setProgress(mergedProgress);
-
         setError(false);
 
-        /*
-         * IMPORTANT:
-         *
-         * Notify the parent AFTER the state update
-         * calculation, not inside the setState updater.
-         */
         if (onProgressChange) {
           onProgressChange(
             mergedProgress
           );
         }
       } catch (err) {
-        if (cancelled) {
+        if (
+          cancelled ||
+          resetting
+        ) {
           return;
         }
 
-        console.error(
-          "Progress fetch failed:",
-          err
+        /*
+         * Network failures can occur while the API
+         * is restarting/reconnecting. Keep the last
+         * valid progress instead of crashing the UI.
+         */
+        console.warn(
+          "Progress temporarily unavailable."
         );
 
-        /*
-         * Keep the last valid progress state.
-         */
         setError(true);
       }
     };
@@ -140,17 +168,21 @@ export default function TaskProgress({
 
     return () => {
       cancelled = true;
+
       clearInterval(interval);
     };
   }, [
     sessionId,
     tasks,
     onProgressChange,
+    resetting,
   ]);
 
-  const completedCount = tasks.filter(
-    (task) => progress[task.id] === true
-  ).length;
+  const completedCount =
+    tasks.filter(
+      (task) =>
+        progress[task.id] === true
+    ).length;
 
   return (
     <div>
@@ -234,7 +266,7 @@ export default function TaskProgress({
         })}
       </div>
 
-      {error && (
+      {error && !resetting && (
         <p className="mt-3 text-[9px] text-[#f85149]">
           Unable to update task progress.
         </p>

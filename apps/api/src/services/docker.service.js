@@ -75,24 +75,48 @@ const executeCommands = async (
    RUN SCENARIO SETUP
 ========================================= */
 
-const runSetupScript = (
+const runSetupScript = async (
   containerId,
   scenarioId
 ) => {
   const scenarioDirectory =
-    getScenarioDirectory(scenarioId);
+    getScenarioDirectory(
+      scenarioId
+    );
 
   if (!scenarioDirectory) {
-    return Promise.reject(
-      new Error(
-        `Scenario directory not found: ${scenarioId}`
-      )
+    throw new Error(
+      `Scenario directory not found: ${scenarioId}`
     );
   }
 
   /*
-   * Convert the local scenario path into
-   * a path relative to /scenarios.
+   * =========================================
+   * CLEAN WORKSPACE
+   * =========================================
+   *
+   * Reset is shared infrastructure.
+   *
+   * Every scenario must start from a completely
+   * clean /workspace.
+   *
+   * Scenario setup scripts are responsible only
+   * for creating their own scenario environment.
+   *
+   * This prevents files, Git repositories, and
+   * branches from previous runs from affecting
+   * Reset, Retry, or Restart Scenario.
+   */
+
+  await executeCommand(
+    containerId,
+    "find /workspace -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +"
+  );
+
+  /*
+   * =========================================
+   * CONVERT SCENARIO PATH
+   * =========================================
    *
    * Example:
    *
@@ -112,6 +136,12 @@ const runSetupScript = (
     )
     .split(path.sep)
     .join("/");
+
+  /*
+   * =========================================
+   * RUN SCENARIO SETUP
+   * =========================================
+   */
 
   return executeCommand(
     containerId,
