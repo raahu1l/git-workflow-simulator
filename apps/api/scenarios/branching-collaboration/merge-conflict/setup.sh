@@ -3,7 +3,7 @@
 cd /workspace
 
 # Completely reset the workspace.
-find /workspace -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
+rm -rf .git
 
 # Initialize repository.
 git init

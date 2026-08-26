@@ -31,10 +31,10 @@ export default function SessionPage() {
   const [progressRefreshKey, setProgressRefreshKey] =
     useState(0);
 
-  // Remount the terminal after a reset so its visible shell/filesystem
-  // state is refreshed along with the backend session state.
   const [terminalRefreshKey, setTerminalRefreshKey] =
     useState(0);
+
+  const [resetting, setResetting] = useState(false);
 
   const previousProgressRef = useRef(null);
   const reactionTimeoutRef = useRef(null);
@@ -54,7 +54,9 @@ export default function SessionPage() {
         );
 
         if (!sessionResponse.ok) {
-          throw new Error("Failed to fetch session");
+          throw new Error(
+            "Failed to fetch session"
+          );
         }
 
         const sessionData =
@@ -68,7 +70,9 @@ export default function SessionPage() {
         );
 
         if (!scenarioResponse.ok) {
-          throw new Error("Failed to fetch scenario");
+          throw new Error(
+            "Failed to fetch scenario"
+          );
         }
 
         const scenarioData =
@@ -96,7 +100,7 @@ export default function SessionPage() {
 
   const handleProgressChange = useCallback(
     (progress) => {
-      if (!scenario) {
+      if (!scenario || resetting) {
         return;
       }
 
@@ -104,7 +108,8 @@ export default function SessionPage() {
         previousProgressRef.current;
 
       if (previousProgress === null) {
-        previousProgressRef.current = progress;
+        previousProgressRef.current =
+          progress;
         return;
       }
 
@@ -120,14 +125,19 @@ export default function SessionPage() {
           progress[task.id]
         );
 
-        if (!wasComplete && isComplete) {
+        if (
+          !wasComplete &&
+          isComplete
+        ) {
           const reaction =
             situations[task.id];
 
           if (reaction) {
             setAlexReaction(reaction);
 
-            if (reactionTimeoutRef.current) {
+            if (
+              reactionTimeoutRef.current
+            ) {
               clearTimeout(
                 reactionTimeoutRef.current
               );
@@ -143,9 +153,10 @@ export default function SessionPage() {
         }
       }
 
-      previousProgressRef.current = progress;
+      previousProgressRef.current =
+        progress;
     },
-    [scenario]
+    [scenario, resetting]
   );
 
   /* =====================================================
@@ -154,7 +165,9 @@ export default function SessionPage() {
 
   useEffect(() => {
     return () => {
-      if (reactionTimeoutRef.current) {
+      if (
+        reactionTimeoutRef.current
+      ) {
         clearTimeout(
           reactionTimeoutRef.current
         );
@@ -163,51 +176,102 @@ export default function SessionPage() {
   }, []);
 
   /* =====================================================
-     RESET SCENARIO
+     RESET / RETRY / RESTART SCENARIO
   ====================================================== */
 
   const resetScenario = async () => {
+    if (
+      resetting ||
+      !sessionId
+    ) {
+      return;
+    }
+
+    /*
+     * =========================================
+     * IMMEDIATE UI RESET
+     * =========================================
+     *
+     * Do this before waiting for the backend.
+     */
+
+    setResetting(true);
+
+    setValidation(null);
+
+    setActiveHint(null);
+
+    setAlexReaction(null);
+
+    previousProgressRef.current =
+      null;
+
     try {
+      /*
+       * =========================================
+       * RESET BACKEND SESSION
+       * =========================================
+       */
+
       const response = await fetch(
         `http://localhost:5000/api/sessions/${sessionId}/reset`,
         {
           method: "POST",
+          cache: "no-store",
         }
       );
 
       if (!response.ok) {
-        throw new Error("Reset request failed");
+        let data = null;
+
+        try {
+          data = await response.json();
+        } catch {
+          data = null;
+        }
+
+        throw new Error(
+          data?.message ||
+            `Reset failed (${response.status})`
+        );
       }
 
-      // Close validation overlay.
-      setValidation(null);
+      /*
+       * =========================================
+       * BACKEND RESET COMPLETE
+       * =========================================
+       *
+       * Only now reconnect the terminal and
+       * start progress polling again.
+       */
 
-      // Close any open hint.
-      setActiveHint(null);
-
-      // Remove Alex reaction.
-      setAlexReaction(null);
-
-      // Allow the next completed task to
-      // trigger its Alex reaction again.
-      previousProgressRef.current = null;
-
-      // Force TaskProgress to fetch the
-      // fresh progress from the backend.
       setProgressRefreshKey(
         (value) => value + 1
       );
 
-      // Force Terminal to remount so the shell, files, and working tree
-      // are loaded again from the reset backend session.
       setTerminalRefreshKey(
         (value) => value + 1
       );
     } catch (error) {
-      console.error(
-        "Reset failed:",
-        error
+      /*
+       * Keep reset errors user-friendly.
+       *
+       * Do not expose raw fetch / Docker errors
+       * to the learner.
+       */
+
+      console.warn(
+        "Scenario reset could not be completed."
       );
+
+      setValidation({
+        success: false,
+        resetError: true,
+        message:
+          "The scenario could not be reset. Try again.",
+      });
+    } finally {
+      setResetting(false);
     }
   };
 
@@ -216,6 +280,13 @@ export default function SessionPage() {
   ====================================================== */
 
   const checkSolution = async () => {
+    if (
+      checking ||
+      resetting
+    ) {
+      return;
+    }
+
     setChecking(true);
     setValidation(null);
     setActiveHint(null);
@@ -229,12 +300,22 @@ export default function SessionPage() {
       );
 
       if (!response.ok) {
+        let data = null;
+
+        try {
+          data = await response.json();
+        } catch {
+          data = null;
+        }
+
         throw new Error(
-          "Validation request failed"
+          data?.message ||
+            "Validation request failed"
         );
       }
 
-      const data = await response.json();
+      const data =
+        await response.json();
 
       setAlexReaction(null);
 
@@ -247,7 +328,8 @@ export default function SessionPage() {
 
       setValidation({
         success: false,
-        message: "Unable to check the solution.",
+        message:
+          "Unable to check the solution.",
       });
     } finally {
       setChecking(false);
@@ -261,8 +343,14 @@ export default function SessionPage() {
   const hints = scenario?.hints || [];
 
   const toggleHint = (index) => {
+    if (resetting) {
+      return;
+    }
+
     setActiveHint((current) =>
-      current === index ? null : index
+      current === index
+        ? null
+        : index
     );
   };
 
@@ -288,13 +376,13 @@ export default function SessionPage() {
     return (
       <main className="flex h-[100dvh] items-center justify-center bg-[#0d1117] px-4 text-[#f0f6fc]">
         <div className="text-center">
-
           <h1 className="text-lg font-semibold">
             Scenario unavailable
           </h1>
 
           <p className="mt-2 text-xs text-[#8b949e]">
-            This scenario could not be loaded.
+            This scenario could not be
+            loaded.
           </p>
 
           <a
@@ -303,7 +391,6 @@ export default function SessionPage() {
           >
             Browse All
           </a>
-
         </div>
       </main>
     );
@@ -319,7 +406,7 @@ export default function SessionPage() {
     scenario.alex?.failure;
 
   return (
-    <main className="h-[100dvh] overflow-hidden bg-[#0d1117] text-[#f0f6fc]">
+    <main className="relative h-[100dvh] overflow-hidden bg-[#0d1117] text-[#f0f6fc]">
 
       {/* =====================================================
           INITIAL STORY
@@ -327,7 +414,8 @@ export default function SessionPage() {
 
       <SessionIntro
         emotion={
-          alexIntro?.emotion || "talking"
+          alexIntro?.emotion ||
+          "talking"
         }
         message={
           alexIntro?.message || ""
@@ -338,44 +426,53 @@ export default function SessionPage() {
           VALIDATION STORY
       ====================================================== */}
 
-      {validation && (
-        <SessionIntro
-          key={
-            validation.success
-              ? "validation-success"
-              : "validation-failure"
-          }
-          emotion={
-            validation.success
-              ? alexSuccess?.emotion ||
-                "celebrating"
-              : alexFailure?.emotion ||
-                "concerned"
-          }
-          message={
-            validation.success
-              ? alexSuccess?.message || ""
-              : alexFailure?.message || ""
-          }
-          actions={[
-            {
-              label: "Retry",
-              onClick: async () => {
-                // Retry means a complete scenario restart, not just
-                // closing the validation message.
-                await resetScenario();
+      {validation &&
+        !resetting && (
+          <SessionIntro
+            key={
+              validation.resetError
+                ? "reset-error"
+                : validation.success
+                ? "validation-success"
+                : "validation-failure"
+            }
+            emotion={
+              validation.resetError
+                ? "concerned"
+                : validation.success
+                ? alexSuccess?.emotion ||
+                  "celebrating"
+                : alexFailure?.emotion ||
+                  "concerned"
+            }
+            message={
+              validation.resetError
+                ? validation.message
+                : validation.success
+                ? alexSuccess?.message ||
+                  ""
+                : alexFailure?.message ||
+                  ""
+            }
+            actions={[
+              {
+                label:
+                  validation.success
+                    ? "Restart Scenario"
+                    : "Retry",
+                onClick:
+                  resetScenario,
               },
-            },
-            {
-              label: "Browse All",
-              onClick: () => {
-                window.location.href =
-                  "/browse";
+              {
+                label: "Browse All",
+                onClick: () => {
+                  window.location.href =
+                    "/browse";
+                },
               },
-            },
-          ]}
-        />
-      )}
+            ]}
+          />
+        )}
 
       {/* =====================================================
           HEADER
@@ -397,7 +494,6 @@ export default function SessionPage() {
             href="/"
             className="flex min-w-0 items-center gap-2"
           >
-
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#238636] text-[10px] font-bold">
               G
             </div>
@@ -405,16 +501,12 @@ export default function SessionPage() {
             <span className="truncate text-xs font-semibold sm:text-sm">
               Git Workflow Simulator
             </span>
-
           </a>
 
         </div>
 
         <div className="hidden items-center gap-2 text-[10px] text-[#8b949e] sm:flex">
-
-          <span>
-            Session
-          </span>
+          <span>Session</span>
 
           <span className="text-[#30363d]">
             •
@@ -423,7 +515,6 @@ export default function SessionPage() {
           <span className="font-mono">
             {sessionId.slice(0, 8)}
           </span>
-
         </div>
 
         <a
@@ -457,10 +548,7 @@ export default function SessionPage() {
               {scenario.description}
             </p>
 
-            {/* TASKS */}
-
             <div className="mt-8">
-
               <TaskProgress
                 key={`desktop-${progressRefreshKey}`}
                 sessionId={sessionId}
@@ -468,14 +556,11 @@ export default function SessionPage() {
                 onProgressChange={
                   handleProgressChange
                 }
+                resetting={resetting}
               />
-
             </div>
 
-            {/* ALEX */}
-
             <div className="mt-8">
-
               <AlexTeammate
                 emotion={
                   alexReaction?.emotion ||
@@ -483,10 +568,10 @@ export default function SessionPage() {
                 }
                 name="Alex"
                 message={
-                  alexReaction?.message || ""
+                  alexReaction?.message ||
+                  ""
                 }
               />
-
             </div>
 
           </div>
@@ -513,11 +598,14 @@ export default function SessionPage() {
 
             </div>
 
-            <div className="min-h-0 flex-1 overflow-hidden">
+            <div className="relative min-h-0 flex-1 overflow-hidden">
+
               <Terminal
                 key={`desktop-terminal-${terminalRefreshKey}`}
                 sessionId={sessionId}
+                resetting={resetting}
               />
+
             </div>
 
           </div>
@@ -550,10 +638,7 @@ export default function SessionPage() {
             {scenario.description}
           </p>
 
-          {/* TASKS */}
-
           <div className="mt-3">
-
             <TaskProgress
               key={`mobile-${progressRefreshKey}`}
               sessionId={sessionId}
@@ -562,28 +647,26 @@ export default function SessionPage() {
               onProgressChange={
                 handleProgressChange
               }
+              resetting={resetting}
             />
-
           </div>
 
-          {/* MOBILE ALEX */}
-
-          {alexReaction && (
-            <div className="mt-3">
-
-              <AlexTeammate
-                emotion={
-                  alexReaction.emotion ||
-                  "neutral"
-                }
-                name="Alex"
-                message={
-                  alexReaction.message || ""
-                }
-              />
-
-            </div>
-          )}
+          {alexReaction &&
+            !resetting && (
+              <div className="mt-3">
+                <AlexTeammate
+                  emotion={
+                    alexReaction.emotion ||
+                    "neutral"
+                  }
+                  name="Alex"
+                  message={
+                    alexReaction.message ||
+                    ""
+                  }
+                />
+              </div>
+            )}
 
         </section>
 
@@ -607,11 +690,14 @@ export default function SessionPage() {
 
             </div>
 
-            <div className="min-h-0 flex-1 overflow-hidden">
+            <div className="relative min-h-0 flex-1 overflow-hidden">
+
               <Terminal
-                key={`desktop-terminal-${terminalRefreshKey}`}
+                key={`mobile-terminal-${terminalRefreshKey}`}
                 sessionId={sessionId}
+                resetting={resetting}
               />
+
             </div>
 
           </div>
@@ -621,86 +707,125 @@ export default function SessionPage() {
       </div>
 
       {/* =====================================================
+          RESET OVERLAY
+      ====================================================== */}
+
+      {resetting && (
+        <div className="pointer-events-auto absolute inset-0 z-50 flex items-center justify-center bg-[#0d1117]/65 backdrop-blur-[2px]">
+
+          <div className="rounded-xl border border-[#30363d] bg-[#161b22] px-6 py-5 text-center shadow-2xl">
+
+            <div className="mx-auto mb-3 h-5 w-5 animate-spin rounded-full border-2 border-[#30363d] border-t-[#58a6ff]" />
+
+            <p className="text-sm font-semibold text-[#f0f6fc]">
+              Resetting workspace...
+            </p>
+
+            <p className="mt-1 text-[10px] text-[#8b949e]">
+              Preparing a fresh scenario
+            </p>
+
+          </div>
+
+        </div>
+      )}
+
+      {/* =====================================================
           ACTION BAR
       ====================================================== */}
 
       <footer className="flex h-14 shrink-0 items-center justify-between border-t border-[#30363d] bg-[#0d1117] px-3 sm:px-5">
 
-        {/* HINTS */}
-
         <div className="relative flex items-center gap-2">
 
-          {hints.slice(0, 2).map((hint, index) => (
-            <div
-              key={index}
-              className="relative"
-            >
-
-              <button
-                type="button"
-                onClick={() => toggleHint(index)}
-                className={`rounded-md border px-3 py-2 text-[10px] transition sm:text-xs ${
-                  activeHint === index
-                    ? "border-[#58a6ff] bg-[#161b22] text-white"
-                    : "border-[#30363d] bg-[#161b22] text-[#c9d1d9] hover:bg-[#21262d]"
-                }`}
+          {hints
+            .slice(0, 2)
+            .map((hint, index) => (
+              <div
+                key={index}
+                className="relative"
               >
-                💡 Hint {index + 1}
-              </button>
 
-              {activeHint === index && (
-                <div className="absolute bottom-12 left-0 z-40 w-64 rounded-lg border border-[#30363d] bg-[#161b22] p-3 shadow-xl sm:w-72">
+                <button
+                  type="button"
+                  disabled={resetting}
+                  onClick={() =>
+                    toggleHint(index)
+                  }
+                  className={`rounded-md border px-3 py-2 text-[10px] transition sm:text-xs ${
+                    activeHint === index
+                      ? "border-[#58a6ff] bg-[#161b22] text-white"
+                      : "border-[#30363d] bg-[#161b22] text-[#c9d1d9] hover:bg-[#21262d]"
+                  } disabled:cursor-not-allowed disabled:opacity-50`}
+                >
+                  💡 Hint {index + 1}
+                </button>
 
-                  <div className="mb-2 flex items-center justify-between">
+                {activeHint === index &&
+                  !resetting && (
+                    <div className="absolute bottom-12 left-0 z-40 w-64 rounded-lg border border-[#30363d] bg-[#161b22] p-3 shadow-xl sm:w-72">
 
-                    <span className="text-[10px] font-semibold uppercase tracking-wide text-[#58a6ff]">
-                      Hint {index + 1}
-                    </span>
+                      <div className="mb-2 flex items-center justify-between">
 
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setActiveHint(null)
-                      }
-                      className="text-xs text-[#8b949e] hover:text-white"
-                    >
-                      ×
-                    </button>
+                        <span className="text-[10px] font-semibold uppercase tracking-wide text-[#58a6ff]">
+                          Hint {index + 1}
+                        </span>
 
-                  </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setActiveHint(
+                              null
+                            )
+                          }
+                          className="text-xs text-[#8b949e] hover:text-white"
+                        >
+                          ×
+                        </button>
 
-                  <p className="text-xs leading-5 text-[#c9d1d9]">
-                    {hint}
-                  </p>
+                      </div>
 
-                </div>
-              )}
+                      <p className="text-xs leading-5 text-[#c9d1d9]">
+                        {hint}
+                      </p>
 
-            </div>
-          ))}
+                    </div>
+                  )}
+
+              </div>
+            ))}
 
         </div>
-
-        {/* ACTIONS */}
 
         <div className="flex items-center gap-2">
 
           <button
             type="button"
             onClick={resetScenario}
-            className="rounded-md border border-[#30363d] bg-[#161b22] px-4 py-2 text-[10px] font-medium text-[#c9d1d9] transition hover:bg-[#21262d] sm:text-xs"
+            disabled={
+              resetting ||
+              checking
+            }
+            className="rounded-md border border-[#30363d] bg-[#161b22] px-4 py-2 text-[10px] font-medium text-[#c9d1d9] transition hover:bg-[#21262d] disabled:cursor-not-allowed disabled:opacity-50 sm:text-xs"
           >
-            Reset
+            {resetting
+              ? "Resetting..."
+              : "Reset"}
           </button>
 
           <button
             type="button"
             onClick={checkSolution}
-            disabled={checking}
+            disabled={
+              checking ||
+              resetting
+            }
             className="rounded-md bg-[#238636] px-4 py-2 text-[10px] font-semibold text-white transition hover:bg-[#2ea043] disabled:cursor-not-allowed disabled:opacity-60 sm:px-5 sm:text-xs"
           >
             {checking
               ? "Checking..."
+              : resetting
+              ? "Resetting..."
               : "✓ Check Solution"}
           </button>
 
