@@ -17,8 +17,29 @@ const scenariosPath = path.resolve(
 
 const createContainer = () => {
   return new Promise((resolve, reject) => {
+    /*
+     * =========================================
+     * MOUNT SCENARIO DEFINITIONS READ-ONLY
+     * =========================================
+     *
+     * /scenarios is the SAME host directory bind-
+     * mounted into every learner's container.
+     *
+     * It must never be writable from inside a
+     * container: a scenario's setup.sh writing
+     * into it (even under its own folder) would
+     * mutate shared, on-disk state that every other
+     * concurrent session for that scenario also
+     * reads from — breaking session isolation.
+     *
+     * Any per-attempt data a scenario needs to
+     * remember between setup.sh and progress.js /
+     * validate.js must go through the generic
+     * setupOutput channel (see runSetupScript
+     * below), which is inherently per-session.
+     */
     exec(
-      `docker run -d -v "${scenariosPath}:/scenarios" git-sandbox`,
+      `docker run -d -v "${scenariosPath}:/scenarios:ro" git-sandbox`,
       (error, stdout, stderr) => {
         if (error) {
           return reject(error);
@@ -141,6 +162,23 @@ const runSetupScript = async (
    * =========================================
    * RUN SCENARIO SETUP
    * =========================================
+   *
+   * The resolved stdout of setup.sh is returned
+   * to the caller (see scenario-runner.service.js
+   * and session.controller.js), which persists it
+   * on that session's own sandbox record as
+   * `setupOutput`.
+   *
+   * This is the generic, per-session channel a
+   * scenario can use to carry data it generates
+   * at setup time (e.g. a commit hash the learner
+   * needs to "discover", not just read from a
+   * file) forward to its own progress.js and
+   * validate.js — without writing to any shared,
+   * on-disk, or learner-visible location.
+   *
+   * The backend never parses this output; it is
+   * opaque scenario-specific text.
    */
 
   return executeCommand(

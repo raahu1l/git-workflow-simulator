@@ -1,0 +1,67 @@
+{
+  "id": "recovering-deleted-branch",
+  "title": "Recovering a Deleted Branch",
+  "difficulty": "Intermediate",
+  "category": "history-recovery",
+  "description": "A feature branch containing unmerged work was accidentally deleted. Recover the commits, verify the recovered history, and safely restore the work to main.",
+  "estimatedTime": "10 min",
+  "tasks": [
+    {
+      "id": "restoreBranch",
+      "label": "Recover the deleted feature/payment-validation branch",
+      "compactLabel": "Recover branch"
+    },
+    {
+      "id": "verifyRecovery",
+      "label": "Switch to the recovered branch and verify both original commits",
+      "compactLabel": "Verify commits"
+    },
+    {
+      "id": "mergeRecovery",
+      "label": "Merge the recovered payment-validation work into main",
+      "compactLabel": "Merge to main"
+    },
+    {
+      "id": "cleanupBranch",
+      "label": "Delete the recovered branch after the work is safely merged",
+      "compactLabel": "Clean up branch"
+    }
+  ],
+  "hints": [
+    "The branch name is gone, but deleting a branch does not immediately delete the commits it pointed to. Think about where Git records previous reference positions.",
+    "Look for the last position of feature/payment-validation. You only need the latest lost commit because its parent contains the earlier payment-validation commit.",
+    "Look at Git's record of recent branch and HEAD movements. Find the last commit that belonged to feature/payment-validation, then use that commit to restore the branch."
+  ],
+  "alex": {
+    "intro": {
+      "emotion": "concerned",
+      "message": "Amit deleted the payment-validation branch before opening the PR. The work was already committed, and the release is getting closer. We need to recover the work without recreating it from scratch."
+    },
+    "situations": {
+      "restoreBranch": {
+        "emotion": "thinking",
+        "message": "The branch name is gone, but that doesn't necessarily mean the commits are gone. Think about where Git keeps track of previous reference positions."
+      },
+      "verifyRecovery": {
+        "emotion": "hopeful",
+        "message": "The branch is back. Before we trust the recovery, switch to it and inspect the history. We need to know that both original payment-validation commits survived."
+      },
+      "mergeRecovery": {
+        "emotion": "happy",
+        "message": "The original work is safely recovered and verified. Now bring it back into main so the team can continue."
+      },
+      "cleanupBranch": {
+        "emotion": "celebrating",
+        "message": "The recovered work is safely in main. Clean up the temporary recovery branch so the repository is back in good shape."
+      }
+    },
+    "success": {
+      "emotion": "celebrating",
+      "message": "Oh thank god. Seriously, thank you — I thought that work was gone for good."
+    },
+    "failure": {
+      "emotion": "concerned",
+      "message": "The recovery isn't complete yet. Make sure the original branch was recovered, its history was checked, the work was merged into main, and the temporary branch was cleaned up."
+    }
+  }
+}

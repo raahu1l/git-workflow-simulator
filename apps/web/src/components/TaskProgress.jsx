@@ -2,8 +2,8 @@
 
 import {
   useEffect,
-  useState,
   useRef,
+  useState,
 } from "react";
 
 export default function TaskProgress({
@@ -16,10 +16,26 @@ export default function TaskProgress({
   const [progress, setProgress] = useState({});
   const [error, setError] = useState(false);
 
-  const progressRef = useRef({});
+  /*
+   * Completed tasks for the CURRENT attempt.
+   *
+   * Once a task becomes true, it remains true
+   * until the scenario is reset.
+   */
+  const completedRef = useRef({});
 
   /* =========================================
-     RESET LOCAL PROGRESS
+     RESET FOR NEW SESSION
+  ========================================== */
+
+  useEffect(() => {
+    completedRef.current = {};
+    setProgress({});
+    setError(false);
+  }, [sessionId]);
+
+  /* =========================================
+     RESET CURRENT ATTEMPT
   ========================================== */
 
   useEffect(() => {
@@ -27,42 +43,24 @@ export default function TaskProgress({
       return;
     }
 
-    /*
-     * Reset the visual task state immediately.
-     *
-     * More importantly, the polling effect below
-     * will not contact the backend while the
-     * scenario is being rebuilt.
-     */
-
-    progressRef.current = {};
+    completedRef.current = {};
     setProgress({});
     setError(false);
   }, [resetting]);
 
   /* =========================================
-     FETCH PROGRESS
+     FETCH REPOSITORY STATE
   ========================================== */
 
   useEffect(() => {
     let cancelled = false;
 
-    /*
-     * Do not poll while Reset / Retry /
-     * Restart Scenario is running.
-     */
-    if (
-      !sessionId ||
-      resetting
-    ) {
+    if (!sessionId || resetting) {
       return;
     }
 
     const fetchProgress = async () => {
-      if (
-        cancelled ||
-        resetting
-      ) {
+      if (cancelled || resetting) {
         return;
       }
 
@@ -83,20 +81,14 @@ export default function TaskProgress({
         }
 
         if (!response.ok) {
-          /*
-           * A temporary 404 can happen while a session
-           * is transitioning. Do not turn that into a
-           * noisy React/Next development error.
-           */
           if (response.status === 404) {
             return;
           }
 
-          const message =
+          throw new Error(
             data?.message ||
-            `Progress request failed (${response.status})`;
-
-          throw new Error(message);
+              `Progress request failed (${response.status})`
+          );
         }
 
         if (
@@ -109,48 +101,56 @@ export default function TaskProgress({
           );
         }
 
-        if (
-          cancelled ||
-          resetting
-        ) {
-          return;
-        }
-
-        const previousProgress =
-          progressRef.current;
-
-        const mergedProgress = {};
-
-        for (const task of tasks) {
-          mergedProgress[task.id] =
-            previousProgress[task.id] === true ||
-            data[task.id] === true;
-        }
-
-        progressRef.current =
-          mergedProgress;
-
-        setProgress(mergedProgress);
-        setError(false);
-
-        if (onProgressChange) {
-          onProgressChange(
-            mergedProgress
-          );
-        }
-      } catch (err) {
-        if (
-          cancelled ||
-          resetting
-        ) {
+        if (cancelled || resetting) {
           return;
         }
 
         /*
-         * Network failures can occur while the API
-         * is restarting/reconnecting. Keep the last
-         * valid progress instead of crashing the UI.
+         * =====================================
+         * IMPORTANT
+         *
+         * Backend reports CURRENT repo state.
+         *
+         * We only ADD completed tasks here.
+         * We never remove a task that was already
+         * completed during this attempt.
+         * =====================================
          */
+
+        for (const task of tasks) {
+          if (
+            data[task.id] === true
+          ) {
+            completedRef.current[task.id] = true;
+          }
+        }
+
+        /*
+         * Build UI state from remembered
+         * completion state.
+         */
+
+        const nextProgress = {};
+
+        for (const task of tasks) {
+          nextProgress[task.id] =
+            completedRef.current[task.id] === true;
+        }
+
+        setProgress(nextProgress);
+        setError(false);
+
+        if (onProgressChange) {
+          onProgressChange(nextProgress);
+        }
+      } catch (error) {
+        if (
+          cancelled ||
+          resetting
+        ) {
+          return;
+        }
+
         console.warn(
           "Progress temporarily unavailable."
         );
@@ -168,7 +168,6 @@ export default function TaskProgress({
 
     return () => {
       cancelled = true;
-
       clearInterval(interval);
     };
   }, [
