@@ -5,6 +5,7 @@ const {
 
 const {
   createSandbox,
+  getSandbox,
   updateSandboxStatus,
 } = require("./sandbox.service");
 
@@ -62,9 +63,7 @@ const startScenarioRunner = async (
        * Docker was starting.
        */
       const currentSandbox =
-        require("./sandbox.service").getSandbox(
-          sandbox.sessionId
-        );
+        getSandbox(sandbox.sessionId);
 
       if (!currentSandbox) {
         return;
@@ -79,10 +78,21 @@ const startScenarioRunner = async (
       /*
        * Run scenario setup.
        */
-      await runSetupScript(
+      const setupOutput = await runSetupScript(
         containerId,
         scenario.id
       );
+
+      /*
+       * Persist the raw setup output on this
+       * session's own sandbox record. See
+       * sandbox.service.js and docker.service.js
+       * for why this exists and why it is safe.
+       */
+      currentSandbox.setupOutput =
+        typeof setupOutput === "string"
+          ? setupOutput
+          : "";
 
       /*
        * Scenario is now ready.

@@ -6,6 +6,7 @@ const {
 
 const {
   getSandbox,
+  mergeTaskProgress,
 } = require("./sandbox.service");
 
 const {
@@ -84,6 +85,17 @@ const validateScenario = async (
     )
       ? sandbox.actions
       : [],
+
+    /*
+     * Raw stdout captured from this session's own
+     * most recent setup.sh run. Optional — most
+     * scenarios don't need it. See
+     * sandbox.service.js for details.
+     */
+    setupOutput:
+      typeof sandbox.setupOutput === "string"
+        ? sandbox.setupOutput
+        : "",
   });
 
   return result;
@@ -125,7 +137,7 @@ const getScenarioProgress = async (
       progressPath
     );
 
-  const result = await progress({
+  const liveProgress = await progress({
     executeCommand,
     containerId:
       sandbox.containerId,
@@ -138,9 +150,43 @@ const getScenarioProgress = async (
     )
       ? sandbox.actions
       : [],
+
+    /*
+     * Raw stdout captured from this session's own
+     * most recent setup.sh run. Optional — most
+     * scenarios don't need it. See
+     * sandbox.service.js for details.
+     */
+    setupOutput:
+      typeof sandbox.setupOutput === "string"
+        ? sandbox.setupOutput
+        : "",
   });
 
-  return result;
+  /*
+   * =========================================
+   * PERSIST TASK COMPLETION
+   * =========================================
+   *
+   * progress.js reports the LIVE repository
+   * state. The backend is responsible for
+   * remembering which tasks have already been
+   * completed during this attempt so that a
+   * later repository change (e.g. a later task
+   * requiring the undo of something an earlier
+   * task checked for) can never uncheck a task
+   * that was already completed.
+   *
+   * This is fully generic: it merges whatever
+   * task ids progress.js returned, and knows
+   * nothing about this scenario specifically.
+   */
+  const persistedProgress = mergeTaskProgress(
+    sessionId,
+    liveProgress
+  );
+
+  return persistedProgress || liveProgress;
 };
 
 module.exports = {

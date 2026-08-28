@@ -138,7 +138,7 @@ const resetSession = async (req, res) => {
      *
      * This keeps the reset logic owned by the scenario.
      */
-    await runSetupScript(
+    const setupOutput = await runSetupScript(
       sandbox.containerId,
       sandbox.scenarioId
     );
@@ -148,6 +148,16 @@ const resetSession = async (req, res) => {
      * has completed successfully.
      */
     resetSandbox(sessionId);
+
+    /*
+     * Capture the fresh setup output AFTER
+     * resetSandbox, since resetSandbox clears it
+     * to "" as part of wiping the previous attempt.
+     */
+    sandbox.setupOutput =
+      typeof setupOutput === "string"
+        ? setupOutput
+        : "";
 
     console.log(
       `Session ${sessionId} reset successfully`

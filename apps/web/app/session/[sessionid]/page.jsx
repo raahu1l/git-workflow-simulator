@@ -707,6 +707,7 @@ export default function SessionPage() {
                 key={`desktop-${progressRefreshKey}`}
                 sessionId={sessionId}
                 tasks={scenario.tasks}
+                compactTaskLabels
                 onProgressChange={
                   handleProgressChange
                 }
@@ -877,7 +878,6 @@ export default function SessionPage() {
         <div className="relative flex items-center gap-2">
 
           {hints
-            .slice(0, 2)
             .map((hint, index) => (
               <div
                 key={index}
