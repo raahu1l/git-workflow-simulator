@@ -6,28 +6,20 @@
   "description": "Make three independent changes and record each one as a separate, meaningful commit.",
   "estimatedTime": "7 min",
 
-  "tasks": [
-    {
-      "id": "bugFixCommit",
-      "label": "Create the bug-fix commit",
-      "compactLabel": "Bug-fix commit"
-    },
-    {
-      "id": "helperCommit",
-      "label": "Create the helper-function commit",
-      "compactLabel": "Helper commit"
-    },
-    {
-      "id": "formattingCommit",
-      "label": "Create the formatting cleanup commit",
-      "compactLabel": "Formatting commit"
-    }
+  "objective": "Create a clean commit history where each logical change to utils.py is recorded separately and in the correct order.",
+
+  "whatToDo": [
+    "Record the negative-quantity bug fix as its own commit.",
+    "Add the is_even helper as a separate commit.",
+    "Record the name-formatting cleanup as a separate commit.",
+    "Finish with a clean working tree."
   ],
 
   "hints": [
-  "Start with the first change described in utils.py. Once you have made only that change, review the diff, stage that change, and create a commit before touching the next task.",
-  "Each commit should represent one logical change. Before committing, check what is staged so you don't accidentally include the helper function or formatting cleanup in the bug-fix commit."
-],
+    "The three changes are described in utils.py. Work through them one at a time, checking the changes you are about to record before moving to the next one.",
+    "Each commit should contain only one logical change. Use Git's status and diff information to make sure unrelated changes are not included together.",
+    "The final history should show the three changes as separate commits in the same order as the requested work."
+  ],
 
   "alex": {
     "intro": {
