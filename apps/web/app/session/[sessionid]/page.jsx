@@ -571,21 +571,53 @@ export default function SessionPage() {
 
       <div className="hidden h-[calc(100dvh-7rem)] min-h-0 sm:flex">
 
-        <aside className="flex w-[340px] shrink-0 flex-col border-r border-[#30363d] bg-[#0d1117]">
+        <aside className="flex w-[320px] shrink-0 flex-col border-r border-[#30363d] bg-[#0d1117]">
 
-          <div className="overflow-y-auto p-5">
+          {/* SCENARIO INFO */}
+
+          <div className="min-h-0 flex-1 p-4 lg:p-5">
 
             <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#58a6ff]">
               Objective
             </p>
 
-            <h1 className="mt-2 text-lg font-bold leading-6">
-              {scenario.title}
-            </h1>
-
-            <p className="mt-4 text-xs leading-5 text-[#8b949e]">
-              {scenario.description}
+            <p className="mt-2 text-xs leading-5 text-[#c9d1d9]">
+              {scenario.objective || scenario.description}
             </p>
+
+            <p className="mt-6 text-[9px] font-semibold uppercase tracking-[0.18em] text-[#58a6ff]">
+              What To Do
+            </p>
+
+            <ul className="mt-3 space-y-2.5">
+              {(scenario.whatToDo || []).map((item, index) => (
+                <li
+                  key={index}
+                  className="flex gap-2.5 text-[11px] leading-4 text-[#c9d1d9]"
+                >
+                  <span className="mt-[5px] h-1.5 w-1.5 shrink-0 rounded-full bg-[#58a6ff]" />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+
+          </div>
+
+          {/* ALEX — RESERVED FOR INTERACTIVE REACTIONS */}
+
+          <div className="shrink-0 border-t border-[#30363d] p-4 lg:p-5">
+
+            <div className="rounded-lg border border-[#30363d] bg-[#161b22] p-3">
+
+              <p className="text-[8px] font-semibold uppercase tracking-[0.16em] text-[#8b949e]">
+                Alex
+              </p>
+
+              <p className="mt-1 text-[10px] leading-4 text-[#8b949e]">
+                Your teammate is here when you need them.
+              </p>
+
+            </div>
 
           </div>
 
@@ -625,29 +657,61 @@ export default function SessionPage() {
 
       <div className="flex h-[calc(100dvh-7rem)] min-h-0 flex-col sm:hidden">
 
-        <section className="shrink-0 border-b border-[#30363d] px-4 py-3">
+        {/* COLLAPSIBLE SCENARIO INFO */}
 
-          <div className="min-w-0">
+        <section className="shrink-0 border-b border-[#30363d] bg-[#0d1117]">
 
-            <p className="text-[8px] font-semibold uppercase tracking-[0.16em] text-[#58a6ff]">
-              Objective
-            </p>
+          <details className="group px-4 py-2.5">
 
-            <h1 className="mt-1 truncate text-sm font-bold">
-              {scenario.title}
-            </h1>
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
 
-          </div>
+              <div className="min-w-0">
 
-          <p className="mt-2 line-clamp-2 text-[9px] leading-4 text-[#8b949e]">
-            {scenario.description}
-          </p>
+                <p className="text-[8px] font-semibold uppercase tracking-[0.16em] text-[#58a6ff]">
+                  Objective
+                </p>
+
+                <p className="mt-1 truncate text-[10px] font-semibold text-[#f0f6fc]">
+                  {scenario.objective || scenario.description}
+                </p>
+
+              </div>
+
+              <span className="shrink-0 text-[10px] text-[#8b949e] transition-transform group-open:rotate-180">
+                ▼
+              </span>
+
+            </summary>
+
+            <div className="pt-3 pb-1">
+
+              <p className="text-[8px] font-semibold uppercase tracking-[0.16em] text-[#58a6ff]">
+                What To Do
+              </p>
+
+              <ul className="mt-2 space-y-1.5">
+
+                {(scenario.whatToDo || []).map((item, index) => (
+                  <li
+                    key={index}
+                    className="flex gap-2 text-[9px] leading-3.5 text-[#c9d1d9]"
+                  >
+                    <span className="mt-[4px] h-1 w-1 shrink-0 rounded-full bg-[#58a6ff]" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+
+              </ul>
+
+            </div>
+
+          </details>
 
         </section>
 
         {/* TERMINAL */}
 
-        <section className="min-h-0 flex-1 p-3">
+        <section className="min-h-0 flex-1 p-2.5">
 
           <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-[#30363d] bg-[#0b0f14]">
 
@@ -668,6 +732,44 @@ export default function SessionPage() {
             {terminalContent}
 
           </div>
+
+        </section>
+
+        {/* COLLAPSIBLE ALEX */}
+
+        <section className="shrink-0 border-t border-[#30363d] bg-[#0d1117]">
+
+          <details className="group px-4 py-2">
+
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
+
+              <div className="min-w-0">
+                <p className="text-[8px] font-semibold uppercase tracking-[0.16em] text-[#8b949e]">
+                  Alex
+                </p>
+
+                <p className="mt-0.5 truncate text-[9px] text-[#8b949e]">
+                  Your teammate is here when you need them.
+                </p>
+              </div>
+
+              <span className="shrink-0 text-[10px] text-[#8b949e] transition-transform group-open:rotate-180">
+                ▼
+              </span>
+
+            </summary>
+
+            <div className="pb-1 pt-2">
+
+              <div className="rounded-md border border-[#30363d] bg-[#161b22] px-3 py-2">
+                <p className="text-[9px] leading-4 text-[#c9d1d9]">
+                  Interactive reactions will appear here.
+                </p>
+              </div>
+
+            </div>
+
+          </details>
 
         </section>
 
@@ -701,11 +803,11 @@ export default function SessionPage() {
           ACTION BAR
       ====================================================== */}
 
-      <footer className="flex h-14 shrink-0 items-center justify-between border-t border-[#30363d] bg-[#0d1117] px-3 sm:px-5">
+      <footer className="flex h-14 shrink-0 items-center justify-between gap-2 border-t border-[#30363d] bg-[#0d1117] px-2.5 sm:px-5">
 
         {/* HINTS */}
 
-        <div className="relative flex items-center gap-2">
+        <div className="relative flex min-w-0 items-center gap-1.5 overflow-hidden">
 
           {hints.map((hint, index) => (
             <div
@@ -764,7 +866,7 @@ export default function SessionPage() {
 
         {/* ACTIONS */}
 
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
 
           <button
             type="button"
