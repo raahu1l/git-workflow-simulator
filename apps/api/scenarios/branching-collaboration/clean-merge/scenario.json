@@ -3,61 +3,39 @@
   "title": "A Clean Merge",
   "difficulty": "Beginner",
   "category": "branching-collaboration",
-  "description": "Merge the completed search feature into main without introducing conflicts.",
+  "description": "The search feature is complete and ready to ship, but it currently lives on its feature branch. Bring it into main cleanly and leave the repository ready for deployment.",
+
   "estimatedTime": "5 min",
 
-  "tasks": [
-  {
-    "id": "switchToMain",
-    "label": "Switch to the main branch",
-    "compactLabel": "Switch to main"
-  },
-  {
-    "id": "mergeFeature",
-    "label": "Merge the search feature into main",
-    "compactLabel": "Merge feature"
-  },
-  {
-  "id": "deleteFeatureBranch",
-  "label": "Clean up the merged feature branch",
-  "compactLabel": "Clean up branch"
-  }
-],
+  "objective": "Integrate the completed search feature into main without losing its history, then clean up the feature branch.",
 
- "hints": [
-  "The search feature is complete on feature/search. Switch to main before integrating the feature into the main history.",
-  "Once the feature has been merged into main, the feature branch is no longer needed and can be cleaned up."
-],
+  "whatToDo": [
+    "Bring the completed search feature into main.",
+    "Make sure the feature's commits are part of main's history.",
+    "Remove the feature branch after the merge.",
+    "Finish with a clean working tree."
+  ],
+
+  "hints": [
+    "The feature is already complete on its own branch. First consider which branch should receive the completed work.",
+    "The feature should become part of main's history while preserving the work that was already committed on the feature branch.",
+    "Once the integration is complete and verified, the temporary feature branch is no longer needed. Check the final repository state before finishing."
+  ],
 
   "alex": {
     "intro": {
       "emotion": "talking",
-      "message": "Sarah reviewed the search feature and says it's ready. Bring the feature branch into main so it's ready for the next deploy."
-    },
-
-    "situations": {
-      "switchToMain": {
-        "emotion": "happy",
-        "message": "Good. You're on the branch that should receive the search feature."
-      },
-      "mergeFeature": {
-        "emotion": "celebrating",
-        "message": "Nice. The search feature is now integrated into main."
-      },
-      "cleanWorkingTree": {
-        "emotion": "happy",
-        "message": "Perfect. The repository is clean and ready for the next step."
-      }
+      "message": "Sarah reviewed the search feature and says it's ready. It's sitting on the feature branch, while main has moved forward with some deployment work. Let's get the feature integrated cleanly before the next deploy."
     },
 
     "success": {
       "emotion": "celebrating",
-      "message": "Merged and confirmed. That search feature is officially part of main now."
+      "message": "Merged and confirmed. The search feature is officially part of main, and the repository is cleaned up and ready for the next deploy."
     },
 
     "failure": {
       "emotion": "concerned",
-      "message": "The search feature isn't fully integrated into main yet. Check the current branch, merge state, and repository history."
+      "message": "The integration isn't complete yet. Make sure the feature actually made it into main, its history is preserved, and the temporary branch is cleaned up."
     }
   }
 }

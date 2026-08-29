@@ -9,101 +9,212 @@ module.exports = async ({
     );
   };
 
-  /* =========================================
-     1. VERIFY BRANCH RENAME
-  ========================================== */
+  // =========================================
+  // MUST FINISH ON RENAMED ACTIVE BRANCH
+  // =========================================
 
-  const branches = await git(
-    "git branch --format='%(refname:short)'"
+  const currentBranch = await git(
+    "git branch --show-current"
   );
 
-  const branchList = branches
+  if (
+    currentBranch.trim() !==
+    "fix-login-validation"
+  ) {
+    return {
+      success: false,
+      message:
+        "Finish on the renamed active login-fix branch: fix-login-validation.",
+    };
+  }
+
+  // =========================================
+  // OLD BRANCH MUST BE GONE
+  // =========================================
+
+  const oldActiveBranch = await git(
+    "git show-ref --verify --quiet refs/heads/fix-bug && echo exists || echo missing"
+  );
+
+  if (oldActiveBranch.trim() !== "missing") {
+    return {
+      success: false,
+      message:
+        "The active branch still has its old name. Rename fix-bug to fix-login-validation.",
+    };
+  }
+
+  // =========================================
+  // RENAMED BRANCH MUST EXIST
+  // =========================================
+
+  const renamedBranch = await git(
+    "git show-ref --verify --quiet refs/heads/fix-login-validation && echo exists || echo missing"
+  );
+
+  if (renamedBranch.trim() !== "exists") {
+    return {
+      success: false,
+      message:
+        "The active login-fix branch has not been renamed correctly.",
+    };
+  }
+
+  // =========================================
+  // BOTH LOGIN COMMITS MUST EXIST
+  // =========================================
+
+  const history = await git(
+    "git log fix-login-validation --format='%H|%s'"
+  );
+
+  const historyLines = history
     .split(/\r?\n/)
-    .map((branch) => branch.trim())
+    .map((line) => line.trim())
     .filter(Boolean);
 
+  const loginFixCommit =
+    historyLines.find(
+      (line) =>
+        line.endsWith(
+          "|Fix empty login credentials"
+        )
+    );
+
+  const loginErrorCommit =
+    historyLines.find(
+      (line) =>
+        line.endsWith(
+          "|Improve login error handling"
+        )
+    );
+
   if (
-    branchList.includes("fix-bug") ||
-    !branchList.includes(
-      "fix-login-validation"
-    )
+    !loginFixCommit ||
+    !loginErrorCommit
   ) {
     return {
       success: false,
       message:
-        "The active bug-fix branch has not been renamed correctly. Rename fix-bug to fix-login-validation.",
+        "The renamed branch does not contain both original login-fix commits.",
     };
   }
 
-  /* =========================================
-     2. VERIFY ACTIVE WORK
-  ========================================== */
+  // =========================================
+  // VERIFY COMMITS ARE REACHABLE FROM BRANCH
+  // =========================================
 
-  const expectedFixTip = await git(
-    "git rev-parse scenario-fix-bug-baseline"
+  const loginFixHash =
+    loginFixCommit.split("|")[0];
+
+  const loginErrorHash =
+    loginErrorCommit.split("|")[0];
+
+  const loginFixReachable = await git(
+    `git merge-base --is-ancestor ${loginFixHash} fix-login-validation && echo yes || echo no`
   );
 
-  const actualFixTip = await git(
-    "git rev-parse fix-login-validation"
+  const loginErrorReachable = await git(
+    `git merge-base --is-ancestor ${loginErrorHash} fix-login-validation && echo yes || echo no`
   );
 
   if (
-    expectedFixTip.trim() !==
-    actualFixTip.trim()
+    loginFixReachable.trim() !== "yes" ||
+    loginErrorReachable.trim() !== "yes"
   ) {
     return {
       success: false,
       message:
-        "The branch was renamed, but its original bug-fix history is no longer intact.",
+        "The original login-fix commits are no longer safely reachable from the renamed branch.",
     };
   }
 
-  /* =========================================
-     3. VERIFY OLD SIGNUP BRANCH DELETED
-  ========================================== */
+  // =========================================
+  // OLD SIGNUP BRANCH MUST BE DELETED
+  // =========================================
 
-  if (
-    branchList.includes(
-      "feature/old-signup"
-    )
-  ) {
+  const signupBranch = await git(
+    "git show-ref --verify --quiet refs/heads/feature/old-signup && echo exists || echo missing"
+  );
+
+  if (signupBranch.trim() !== "missing") {
     return {
       success: false,
       message:
-        "The old signup branch still exists. It has already been merged into main and can be safely removed.",
+        "The already-merged feature/old-signup branch still exists.",
     };
   }
 
-  /* =========================================
-     4. VERIFY MAIN WAS NOT CHANGED
-  ========================================== */
+  // =========================================
+  // MAIN MUST REMAIN UNCHANGED
+  // =========================================
 
-  const expectedMainTip = await git(
+  const baselineMain = await git(
     "git rev-parse scenario-main-baseline"
   );
 
-  const actualMainTip = await git(
+  const currentMain = await git(
     "git rev-parse main"
   );
 
   if (
-    expectedMainTip.trim() !==
-    actualMainTip.trim()
+    baselineMain.trim() !==
+    currentMain.trim()
   ) {
     return {
       success: false,
       message:
-        "main has changed. The cleanup should not modify the main branch's history.",
+        "main was modified. This cleanup should not change main's history.",
     };
   }
 
-  /* =========================================
-     SUCCESS
-  ========================================== */
+  // =========================================
+  // ACTIVE BRANCH MUST STILL POINT TO
+  // ORIGINAL LOGIN WORK
+  // =========================================
+
+  const baselineFix = await git(
+    "git rev-parse scenario-fix-bug-baseline"
+  );
+
+  const currentFix = await git(
+    "git rev-parse fix-login-validation"
+  );
+
+  if (
+    baselineFix.trim() !==
+    currentFix.trim()
+  ) {
+    return {
+      success: false,
+      message:
+        "The active login-fix branch no longer points to the original completed work.",
+    };
+  }
+
+  // =========================================
+  // WORKING TREE MUST BE CLEAN
+  // =========================================
+
+  const status = await git(
+    "git status --porcelain --untracked-files=all"
+  );
+
+  if (status.trim() !== "") {
+    return {
+      success: false,
+      message:
+        "The branch cleanup is complete, but the working tree is not clean.",
+    };
+  }
+
+  // =========================================
+  // SUCCESS
+  // =========================================
 
   return {
     success: true,
     message:
-      "Much cleaner now. Thanks for keeping the branch list from turning into a junk drawer.",
+      "Much cleaner now. The active login-fix work is preserved, the branch has a clear name, the merged signup branch is removed, and main remains untouched.",
   };
 };

@@ -3,63 +3,38 @@
   "title": "Clean Up Before Release",
   "difficulty": "Beginner",
   "category": "branching-collaboration",
-  "description": "Clean up the repository before the next release without losing active bug-fix work.",
+  "description": "Release preparation is underway. Preserve the active login-fix work while cleaning up a stale branch that has already been merged into main.",
   "estimatedTime": "7 min",
 
-  "tasks": [
-    {
-      "id": "renameBranch",
-      "label": "Rename the active bug-fix branch",
-      "compactLabel": "Rename branch"
-    },
-    {
-      "id": "verifyWork",
-    "label": "Verify the login-fix commits are still on the renamed branch",
-    "compactLabel": "Verify commits"
-    },
-    {
-      "id": "deleteMergedBranch",
-      "label": "Remove the merged signup branch",
-      "compactLabel": "Clean old branch"
-    }
+  "objective": "Rename the active login-fix branch without losing its work, then remove the already-merged signup branch.",
+
+  "whatToDo": [
+    "Give the active login-fix branch a clearer name.",
+    "Make sure both login-fix commits remain intact after the rename.",
+    "Remove the old signup branch that has already been merged.",
+    "Leave main unchanged and finish with a clean repository."
   ],
 
   "hints": [
-  "The active branch handles login validation. Rename fix-bug to fix-login-validation, then inspect its commit history to make sure the two login-fix commits are still there.",
-  "The signup work has already been merged into main. Switch to main before removing feature/old-signup, and let Git's normal safe deletion check protect you from deleting unmerged work."
+  "There are two kinds of branches here: active work that must be preserved, and old work that has already been merged. First identify which branch contains the unfinished login fixes and give it a clearer name.",
+  "After renaming the active branch, inspect its history. The two login-fix commits should still be attached to the renamed branch — renaming a branch should not change the commits it points to.",
+  "The signup feature was already merged into main before you started. Once you are on main, remove only the old signup branch. Leave the active login-fix branch intact."
 ],
 
   "alex": {
     "intro": {
       "emotion": "thinking",
-      "message": "We're preparing the next release and fix-bug is getting confusing with the other bug-fix branches. This one specifically handles login validation, so rename it to fix-login-validation. Your commits are still active, so make sure the rename doesn't affect your work. After that, clean up the old signup branch — it was already merged into main."
-    },
-
-    "situations": {
-      "renameBranch": {
-        "emotion": "talking",
-        "message": "That branch name is much clearer. Now make sure the bug-fix commits are still attached to it."
-      },
-
-      "preserveWork": {
-        "emotion": "happy",
-        "message": "Good. The active bug-fix work is still intact. You can safely move on to the stale branch cleanup."
-      },
-
-      "deleteMergedBranch": {
-        "emotion": "celebrating",
-        "message": "Nice cleanup. The merged signup branch is gone and the active bug-fix work is still safe."
-      }
+      "message": "We're preparing the next release and the branch names are getting messy. The active login fix needs a clearer name, but don't disturb its two commits. The old signup work is already in main, so that stale branch can finally go."
     },
 
     "success": {
       "emotion": "celebrating",
-      "message": "Much cleaner now. The active fix is preserved and the stale branch is out of the way."
+      "message": "Much cleaner. The active login fix is still completely intact, and the stale signup branch is out of the way. We're ready for the release."
     },
 
     "failure": {
       "emotion": "concerned",
-      "message": "Something is still wrong with the branch cleanup. Check which branches are active, which work is already merged, and make sure the bug-fix commits haven't been lost."
+      "message": "Something went wrong with the cleanup. The active login work must remain intact, while only the already-merged signup branch should be removed."
     }
   }
 }

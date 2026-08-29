@@ -3,73 +3,38 @@
   "title": "Create Your First Commit",
   "difficulty": "Beginner",
   "category": "git-foundations",
-  "description": "Initialize a Git repository and create your first commit.",
+  "description": "A new repository needs to be initialized and its first project file committed so the team can start tracking the project.",
+
   "estimatedTime": "5 min",
 
-  "tasks": [
-    {
-      "id": "initializeRepository",
-      "label": "Initialize a Git repository",
-      "compactLabel": "Initialize repository"
-    },
-    {
-      "id": "createFile",
-      "label": "Create README.md",
-      "compactLabel": "Create README.md"
-    },
-    {
-      "id": "stageFile",
-      "label": "Stage README.md",
-      "compactLabel": "Stage README.md"
-    },
-    {
-      "id": "createCommit",
-      "label": "Create your first commit",
-      "compactLabel": "Create commit"
-    }
+  "objective": "Initialize the repository, create README.md, and make the first Git commit.",
+
+  "whatToDo": [
+    "Initialize a Git repository in /workspace.",
+    "Create a README.md file.",
+    "Stage README.md.",
+    "Create the repository's first commit."
   ],
 
   "hints": [
-  "Start by initializing Git in the /workspace directory .",
-  "After creating README.md, stage it with git add README.md and create a commit with git commit."
-],
+    "Start by initializing Git in the /workspace directory.",
+    "Create README.md, then use Git to stage the file and commit it."
+  ],
 
   "alex": {
     "intro": {
       "emotion": "talking",
-      "message": "Hey! I was working on this repo earlier and got pulled away. I think I left things unfinished. Can you take a look?"
-    },
-
-    "situations": {
-      "initializeRepository": {
-        "emotion": "happy",
-        "message": "Nice! The repository is initialized. We're ready to start."
-      },
-
-      "createFile": {
-        "emotion": "thinking",
-        "message": "Good. We've got something to work with now."
-      },
-
-      "stageFile": {
-        "emotion": "happy",
-        "message": "Nice, the file is staged. We're almost there."
-      },
-
-      "createCommit": {
-        "emotion": "celebrating",
-        "message": "There it is! Your first commit is in."
-      }
+      "message": "Hey! I was setting up this project and got pulled away before I could finish the repository setup. Can you get the project ready for version control?"
     },
 
     "success": {
       "emotion": "celebrating",
-      "message": "You did it! You saved me from having to come back and clean this up. I owe you one."
+      "message": "Nice! The repository is initialized, README.md is tracked, and the first commit is in. We're ready to start building."
     },
 
     "failure": {
       "emotion": "concerned",
-      "message": "Hmm... something's still not quite right. Take another look and give it another shot."
+      "message": "We're not quite ready yet. Make sure README.md is actually committed and the repository is left in a clean final state."
     }
   }
 }

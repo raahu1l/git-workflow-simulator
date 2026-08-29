@@ -67,23 +67,6 @@ git add .
 git commit -m "Validate payment method"
 
 # =========================================
-# SAVE ORIGINAL LOST COMMIT
-# =========================================
-#
-# This must NOT be written to /scenarios (shared,
-# read-only, and shared across every concurrent
-# session for this scenario).
-#
-# Printing it to stdout lets the backend capture it
-# on THIS session's own sandbox record only. It is
-# never written to a location the learner's shell
-# can read, and never leaks to another session.
-
-LOST_COMMIT=$(git rev-parse HEAD)
-
-echo "LOST_COMMIT=$LOST_COMMIT"
-
-# =========================================
 # DELETE FEATURE BRANCH
 # =========================================
 

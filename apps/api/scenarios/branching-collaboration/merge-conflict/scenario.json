@@ -3,7 +3,7 @@
   "title": "Resolve a Merge Conflict",
   "difficulty": "Beginner",
   "category": "branching-collaboration",
-  "description": "Merge a feature branch into the main branch and resolve the conflict that occurs when both branches modify the same line.",
+  "description": "Merge the feature branch into master, resolve the conflicting change in README.md, and leave the repository in a clean completed state.",
   "estimatedTime": "7 min",
 
   "tasks": [
@@ -14,53 +14,53 @@
     },
     {
       "id": "resolveConflict",
-      "label": "Resolve the merge conflict",
+      "label": "Resolve the README.md merge conflict",
       "compactLabel": "Resolve conflict"
     },
     {
       "id": "completeMerge",
-      "label": "Complete the merge with a commit",
+      "label": "Complete the merge and leave the repository clean",
       "compactLabel": "Complete merge"
     }
   ],
 
   "hints": [
-    "Both branches changed the same part of README.md. After starting the merge, inspect the conflict markers to understand what Git is asking you to decide.",
-    "A resolved file should no longer contain conflict markers. Once you are satisfied with the final content, stage the resolved file and complete the merge.",
-    "Use Git's status and diff information to confirm whether the conflict is still unresolved before finishing the merge."
+    "The feature and master branches changed the same line in README.md. Begin by bringing the feature branch into the branch that should receive the work.",
+    "Git will mark the conflicting part of README.md so you can decide which final content should remain. Resolve that section and make sure the conflict markers are gone.",
+    "After resolving the file, tell Git that the conflict is resolved and finish the merge. Before checking the solution, make sure the repository has no unfinished merge state or pending changes."
   ],
 
   "alex": {
     "intro": {
       "emotion": "thinking",
-      "message": "The feature branch has useful work, but both branches changed the same line. Merge it into the main branch and sort out the conflict."
+      "message": "The feature is ready, but both branches changed the same line. We need to bring the feature into master and resolve the conflict without leaving the repository half-merged."
     },
 
     "situations": {
       "startMerge": {
-        "emotion": "talking",
-        "message": "The merge has started. Git found changes that it can't combine automatically."
+        "emotion": "concerned",
+        "message": "There it is — Git found the conflicting change. Now we need to decide what the final README should say."
       },
 
       "resolveConflict": {
         "emotion": "happy",
-        "message": "Nice. The conflict has been resolved. Make sure Git recognizes the file as resolved."
+        "message": "Nice. The conflicting section is resolved. Make sure Git sees the file as resolved before finishing the merge."
       },
 
       "completeMerge": {
         "emotion": "celebrating",
-        "message": "Great! The branches are merged and the conflict is behind us."
+        "message": "Perfect. The merge is complete and the repository is back to a clean state."
       }
     },
 
     "success": {
       "emotion": "celebrating",
-      "message": "Nice work! You handled the conflict and completed the merge successfully."
+      "message": "Nice work! You handled the conflict, preserved both branches' history, and completed the merge cleanly."
     },
 
     "failure": {
       "emotion": "concerned",
-      "message": "The merge isn't complete yet. Check the merge state and make sure the conflict has been resolved before finishing."
+      "message": "The merge isn't in a completed state yet. Check the conflict resolution, merge history, and working tree before trying again."
     }
   }
 }

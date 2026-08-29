@@ -1,70 +1,90 @@
 #!/bin/bash
 
+set -e
+
 cd /workspace
 
-# Completely reset the workspace.
+# =========================================
+# FRESH REPOSITORY
+# =========================================
+
 rm -rf .git
 
-# Initialize repository.
-git init
+git init -b master
 
-# Configure Git identity.
 git config user.name "Student"
 git config user.email "student@example.com"
+git config core.editor ":"
 
-# Create initial file.
-cat <<EOF > README.md
+# =========================================
+# INITIAL FILE
+# =========================================
+
+cat > README.md <<'EOF'
 # Git Merge Conflict
 
 Line 1
+
 Line 2
+
 Line 3
 EOF
 
 git add README.md
 git commit -m "Initial commit"
 
-# Create feature branch.
-git checkout -b feature
+# =========================================
+# FEATURE BRANCH
+# =========================================
 
-# Make a conflicting change on feature.
-cat <<EOF > README.md
+git switch -c feature
+
+cat > README.md <<'EOF'
 # Git Merge Conflict
 
 Line 1
+
 Feature changed Line 2
+
 Line 3
 EOF
 
 git add README.md
 git commit -m "Feature changes"
 
-# Return to main branch.
-git checkout master
+# =========================================
+# RETURN TO MASTER
+# =========================================
 
-# Make a conflicting change on master.
-cat <<EOF > README.md
+git switch master
+
+cat > README.md <<'EOF'
 # Git Merge Conflict
 
 Line 1
+
 Main changed Line 2
+
 Line 3
 EOF
 
 git add README.md
 git commit -m "Main changes"
 
+# =========================================
+# START LEARNER
+# =========================================
+
 echo ""
 echo "========================================="
-echo "Your task:"
+echo "Repository prepared successfully."
 echo ""
-echo "Merge the feature branch into master."
-echo "A merge conflict will occur because both"
-echo "branches changed the same line."
+echo "Current branch: master"
 echo ""
-echo "Resolve the conflict by deciding what"
-echo "the final README.md should contain."
+echo "The feature branch contains useful work,"
+echo "but master has a conflicting change."
 echo ""
-echo "After resolving the conflict, complete"
-echo "the merge and leave the working tree clean."
+echo "Merge feature into master, resolve the"
+echo "conflict in README.md, and complete the"
+echo "merge with a clean working tree."
 echo "========================================="

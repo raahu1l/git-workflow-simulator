@@ -9,69 +9,177 @@ module.exports = async ({
     );
   };
 
-  /* =========================================
-     1. MUST BE ON MAIN
-  ========================================== */
+  // =========================================
+  // MUST FINISH ON MAIN
+  // =========================================
 
-  const branch = await git(
+  const currentBranch = await git(
     "git branch --show-current"
   );
 
-  if (branch.trim() !== "main") {
+  if (currentBranch.trim() !== "main") {
     return {
       success: false,
       message:
-        "Switch to main before integrating the search feature.",
+        "The search feature must be integrated into main.",
     };
   }
 
-  /* =========================================
-     2. VERIFY MERGE
-  ========================================== */
+  // =========================================
+  // FEATURE BRANCH MUST HAVE BEEN REMOVED
+  // =========================================
 
-  const headParents = await git(
-    "git rev-list --parents -n 1 HEAD 2>/dev/null || true"
+  const featureBranch = await git(
+    "git show-ref --verify --quiet refs/heads/feature/search && echo exists || echo missing"
   );
 
-  const parents = headParents
-    .trim()
-    .split(/\s+/)
+  if (featureBranch.trim() !== "missing") {
+    return {
+      success: false,
+      message:
+        "The feature is integrated, but the temporary feature branch still exists.",
+    };
+  }
+
+  // =========================================
+  // FEATURE COMMITS MUST EXIST IN HISTORY
+  // =========================================
+
+  const featureCommits = await git(
+    "git log main --format='%H|%s'"
+  );
+
+  const historyLines = featureCommits
+    .split(/\r?\n/)
+    .map((line) => line.trim())
     .filter(Boolean);
 
-  /*
-   * The branches diverged during setup, so a valid
-   * integration should result in a merge commit.
-   *
-   * We intentionally do not check the commit message.
-   */
+  const normalizationCommit =
+    historyLines.find(
+      (line) =>
+        line.endsWith(
+          "|Add search query normalization"
+        )
+    );
 
-  if (parents.length < 3) {
+  const searchServiceCommit =
+    historyLines.find(
+      (line) =>
+        line.endsWith(
+          "|Add product search service"
+        )
+    );
+
+  if (
+    !normalizationCommit ||
+    !searchServiceCommit
+  ) {
     return {
       success: false,
       message:
-        "The search feature has not been merged into main yet.",
+        "The completed search feature is not fully present in main's history.",
     };
   }
 
-  /* =========================================
-     3. VERIFY FEATURE WORK IS IN MAIN
-  ========================================== */
+  const normalizationHash =
+    normalizationCommit.split("|")[0];
 
-  const featureHistory = await git(
-    "git log main --oneline -- src/search_utils.py src/search_service.py 2>/dev/null || true"
+  const searchServiceHash =
+    searchServiceCommit.split("|")[0];
+
+  // =========================================
+  // FEATURE COMMITS MUST BE REACHABLE
+  // =========================================
+
+  const normalizationReachable =
+    await git(
+      `git merge-base --is-ancestor ${normalizationHash} main && echo yes || echo no`
+    );
+
+  const searchServiceReachable =
+    await git(
+      `git merge-base --is-ancestor ${searchServiceHash} main && echo yes || echo no`
+    );
+
+  if (
+    normalizationReachable.trim() !== "yes" ||
+    searchServiceReachable.trim() !== "yes"
+  ) {
+    return {
+      success: false,
+      message:
+        "The search feature commits are not reachable from main.",
+    };
+  }
+
+  // =========================================
+  // MERGE MUST PRESERVE THE FEATURE HISTORY
+  // =========================================
+
+  const featureParent =
+    await git(
+      `git rev-list --parents -n 1 ${searchServiceHash}`
+    );
+
+  if (!featureParent.trim()) {
+    return {
+      success: false,
+      message:
+        "The search feature history could not be verified.",
+    };
+  }
+
+  // =========================================
+  // SEARCH FILES MUST EXIST ON MAIN
+  // =========================================
+
+  const searchFiles = await git(
+    "git ls-tree -r --name-only main -- src/search_utils.py src/search_service.py"
   );
 
-  if (featureHistory.trim() === "") {
+  const files = searchFiles
+    .split(/\r?\n/)
+    .map((file) => file.trim())
+    .filter(Boolean);
+
+  if (
+    !files.includes("src/search_utils.py") ||
+    !files.includes("src/search_service.py")
+  ) {
     return {
       success: false,
       message:
-        "The search feature's work is not present in main.",
+        "The search feature files are not present in main.",
     };
   }
 
-  /* =========================================
-     4. VERIFY NO CONFLICT MARKERS
-  ========================================== */
+  // =========================================
+  // MAIN'S OWN WORK MUST STILL EXIST
+  // =========================================
+
+  const mainFiles = await git(
+    "git ls-tree -r --name-only main -- DEPLOYMENT.md src/config.py"
+  );
+
+  const mainFileList = mainFiles
+    .split(/\r?\n/)
+    .map((file) => file.trim())
+    .filter(Boolean);
+
+  if (
+    !mainFileList.includes("DEPLOYMENT.md") ||
+    !mainFileList.includes("src/config.py")
+  ) {
+    return {
+      success: false,
+      message:
+        "Main's existing deployment work was not preserved during the integration.",
+    };
+  }
+
+  // =========================================
+  // NO CONFLICT MARKERS
+  // =========================================
 
   const conflictMarkers = await git(
     "grep -R -n -E '^(<<<<<<<|=======|>>>>>>>)' /workspace --exclude-dir=.git 2>/dev/null || true"
@@ -81,32 +189,16 @@ module.exports = async ({
     return {
       success: false,
       message:
-        "Conflict markers are still present in the workspace.",
+        "Conflict markers remain in the workspace.",
     };
   }
 
-  /* =========================================
-     5. VERIFY FEATURE BRANCH CLEANUP
-  ========================================== */
-
-  const featureBranch = await git(
-    "git rev-parse --verify feature/search 2>/dev/null || true"
-  );
-
-  if (featureBranch.trim() !== "") {
-    return {
-      success: false,
-      message:
-        "The merge is complete, but the feature branch has not been cleaned up yet.",
-    };
-  }
-
-  /* =========================================
-     6. VERIFY CLEAN WORKING TREE
-  ========================================== */
+  // =========================================
+  // WORKING TREE MUST BE CLEAN
+  // =========================================
 
   const status = await git(
-    "git status --porcelain"
+    "git status --porcelain --untracked-files=all"
   );
 
   if (status.trim() !== "") {
@@ -117,13 +209,13 @@ module.exports = async ({
     };
   }
 
-  /* =========================================
-     SUCCESS
-  ========================================== */
+  // =========================================
+  // SUCCESS
+  // =========================================
 
   return {
     success: true,
     message:
-      "Merged and confirmed. That search feature is officially part of main now.",
+      "Merged and confirmed. The search feature is part of main, its history is preserved, the feature branch is cleaned up, and the repository is ready.",
   };
 };
