@@ -1,6 +1,5 @@
 const {
   validateScenario,
-  getScenarioProgress,
 } = require("../services/validation-runner.service");
 
 const {
@@ -42,35 +41,6 @@ const validateSession = async (req, res) => {
 };
 
 /* =========================================
-   GET PROGRESS
-========================================= */
-
-const getProgress = async (req, res) => {
-  try {
-    const result = await getScenarioProgress(
-      req.params.sessionId
-    );
-
-    if (result === null) {
-      return res.status(404).json({
-        message: "Session not found",
-      });
-    }
-
-    res.json(result);
-  } catch (error) {
-    console.error(
-      "Failed to get scenario progress:",
-      error
-    );
-
-    res.status(500).json({
-      message: "Failed to get scenario progress",
-    });
-  }
-};
-
-/* =========================================
    GET SESSION
 ========================================= */
 
@@ -97,10 +67,12 @@ const getSession = (req, res) => {
 ========================================= */
 
 const resetSession = async (req, res) => {
-  const sessionId = req.params.sessionId;
+  const sessionId =
+    req.params.sessionId;
 
   try {
-    const sandbox = getSandbox(sessionId);
+    const sandbox =
+      getSandbox(sessionId);
 
     if (!sandbox) {
       return res.status(404).json({
@@ -109,14 +81,17 @@ const resetSession = async (req, res) => {
     }
 
     /*
-     * Prevent progress/validation requests from
-     * treating the temporary reset state as a
-     * broken Git repository.
+     * Prevent multiple resets from running
+     * against the same sandbox at once.
      */
-    if (sandbox.status === "resetting") {
+    if (
+      sandbox.status ===
+      "resetting"
+    ) {
       return res.status(409).json({
         success: false,
-        message: "Session is already resetting.",
+        message:
+          "Session is already resetting.",
       });
     }
 
@@ -125,34 +100,31 @@ const resetSession = async (req, res) => {
     );
 
     /*
-     * Mark the sandbox as resetting BEFORE changing
-     * anything inside the container.
+     * Mark the sandbox as resetting BEFORE
+     * changing anything inside the container.
      */
     sandbox.status = "resetting";
 
     /*
-     * setup.sh already performs a complete reset
-     * of /workspace, including removing .git.
+     * setup.sh owns the actual repository reset.
      *
-     * Therefore we do NOT manually delete .git here.
-     *
-     * This keeps the reset logic owned by the scenario.
+     * The shared backend does not know how a
+     * particular scenario should be initialized.
      */
-    const setupOutput = await runSetupScript(
-      sandbox.containerId,
-      sandbox.scenarioId
-    );
+    const setupOutput =
+      await runSetupScript(
+        sandbox.containerId,
+        sandbox.scenarioId
+      );
 
     /*
-     * Only mark the session as ready after setup
-     * has completed successfully.
+     * Reset generic session state after the
+     * scenario setup completed successfully.
      */
     resetSandbox(sessionId);
 
     /*
-     * Capture the fresh setup output AFTER
-     * resetSandbox, since resetSandbox clears it
-     * to "" as part of wiping the previous attempt.
+     * Preserve the fresh setup output.
      */
     sandbox.setupOutput =
       typeof setupOutput === "string"
@@ -175,11 +147,11 @@ const resetSession = async (req, res) => {
     );
 
     /*
-     * If reset failed, restore the sandbox to a
-     * usable status rather than leaving it stuck
-     * permanently in "resetting".
+     * Never leave the sandbox permanently
+     * stuck in "resetting" after a failure.
      */
-    const sandbox = getSandbox(sessionId);
+    const sandbox =
+      getSandbox(sessionId);
 
     if (sandbox) {
       sandbox.status = "created";
@@ -195,7 +167,6 @@ const resetSession = async (req, res) => {
 
 module.exports = {
   validateSession,
-  getProgress,
   getSession,
   resetSession,
 };

@@ -1,18 +1,14 @@
 "use client";
 
 import {
-  useCallback,
   useEffect,
-  useRef,
   useState,
 } from "react";
 
 import { useParams } from "next/navigation";
 
 import Terminal from "@/src/components/Terminal";
-import AlexTeammate from "@/src/components/alex/AlexTeammate";
 import SessionIntro from "@/src/components/SessionIntro";
-import TaskProgress from "@/src/components/TaskProgress";
 
 export default function SessionPage() {
   const params = useParams();
@@ -26,29 +22,26 @@ export default function SessionPage() {
    * SANDBOX STARTUP STATUS
    * =========================================
    *
-   * The session can now exist before Docker
+   * The session can exist before Docker
    * and setup.sh have finished.
    */
   const [sandboxStatus, setSandboxStatus] =
     useState("starting");
 
-  const [validation, setValidation] = useState(null);
-  const [checking, setChecking] = useState(false);
+  const [validation, setValidation] =
+    useState(null);
 
-  const [alexReaction, setAlexReaction] = useState(null);
+  const [checking, setChecking] =
+    useState(false);
 
-  const [activeHint, setActiveHint] = useState(null);
-
-  const [progressRefreshKey, setProgressRefreshKey] =
-    useState(0);
+  const [activeHint, setActiveHint] =
+    useState(null);
 
   const [terminalRefreshKey, setTerminalRefreshKey] =
     useState(0);
 
-  const [resetting, setResetting] = useState(false);
-
-  const previousProgressRef = useRef(null);
-  const reactionTimeoutRef = useRef(null);
+  const [resetting, setResetting] =
+    useState(false);
 
   /* =====================================================
      LOAD SESSION → SCENARIO
@@ -173,11 +166,9 @@ export default function SessionPage() {
       loadScenario();
 
       /*
-       * Start polling immediately.
+       * Initial startup polling only.
        *
-       * This is only for the initial scenario
-       * preparation. Reset/Retry does not use
-       * this flow.
+       * This is not task/progress polling.
        */
       startupInterval = setInterval(
         checkSandboxStatus,
@@ -195,88 +186,6 @@ export default function SessionPage() {
   }, [sessionId]);
 
   /* =====================================================
-     PROGRESS → ALEX REACTION
-  ====================================================== */
-
-  const handleProgressChange = useCallback(
-    (progress) => {
-      if (!scenario || resetting) {
-        return;
-      }
-
-      const previousProgress =
-        previousProgressRef.current;
-
-      if (previousProgress === null) {
-        previousProgressRef.current =
-          progress;
-
-        return;
-      }
-
-      const situations =
-        scenario.alex?.situations || {};
-
-      for (const task of scenario.tasks || []) {
-        const wasComplete = Boolean(
-          previousProgress[task.id]
-        );
-
-        const isComplete = Boolean(
-          progress[task.id]
-        );
-
-        if (
-          !wasComplete &&
-          isComplete
-        ) {
-          const reaction =
-            situations[task.id];
-
-          if (reaction) {
-            setAlexReaction(reaction);
-
-            if (
-              reactionTimeoutRef.current
-            ) {
-              clearTimeout(
-                reactionTimeoutRef.current
-              );
-            }
-
-            reactionTimeoutRef.current =
-              setTimeout(() => {
-                setAlexReaction(null);
-              }, 4000);
-          }
-
-          break;
-        }
-      }
-
-      previousProgressRef.current =
-        progress;
-    },
-    [scenario, resetting]
-  );
-
-  /* =====================================================
-     CLEANUP ALEX REACTION TIMER
-  ====================================================== */
-
-  useEffect(() => {
-    return () => {
-      if (
-        reactionTimeoutRef.current
-      ) {
-        clearTimeout(
-          reactionTimeoutRef.current
-        );
-      }
-    };
-  }, []);
-
-  /* =====================================================
      RESET / RETRY / RESTART SCENARIO
   ====================================================== */
 
@@ -292,20 +201,12 @@ export default function SessionPage() {
      * =========================================
      * IMMEDIATE UI RESET
      * =========================================
-     *
-     * Do this before waiting for the backend.
      */
 
     setResetting(true);
 
     setValidation(null);
-
     setActiveHint(null);
-
-    setAlexReaction(null);
-
-    previousProgressRef.current =
-      null;
 
     try {
       /*
@@ -342,13 +243,9 @@ export default function SessionPage() {
        * BACKEND RESET COMPLETE
        * =========================================
        *
-       * Only now reconnect the terminal and
-       * start progress polling again.
+       * Reconnect the terminal to the fresh
+       * scenario workspace.
        */
-
-      setProgressRefreshKey(
-        (value) => value + 1
-      );
 
       setTerminalRefreshKey(
         (value) => value + 1
@@ -356,9 +253,6 @@ export default function SessionPage() {
     } catch (error) {
       /*
        * Keep reset errors user-friendly.
-       *
-       * Do not expose raw fetch / Docker errors
-       * to the learner.
        */
 
       console.warn(
@@ -417,8 +311,6 @@ export default function SessionPage() {
 
       const data =
         await response.json();
-
-      setAlexReaction(null);
 
       setValidation(data);
     } catch (error) {
@@ -512,12 +404,7 @@ export default function SessionPage() {
    * =========================================
    *
    * During initial startup, do not mount
-   * Terminal. This prevents the terminal from
-   * trying to connect before Docker/setup.sh
-   * has finished.
-   *
-   * Reset/Retry still use terminalRefreshKey
-   * exactly as before.
+   * Terminal until Docker/setup.sh is ready.
    */
 
   const terminalContent = (
@@ -635,7 +522,6 @@ export default function SessionPage() {
       <header className="flex h-12 items-center justify-between border-b border-[#30363d] bg-[#0d1117] px-4 sm:px-5">
 
         <div className="flex min-w-0 items-center gap-3">
-
           <a
             href="/browse"
             aria-label="Back to Browse All"
@@ -656,7 +542,6 @@ export default function SessionPage() {
               Git Workflow Simulator
             </span>
           </a>
-
         </div>
 
         <div className="hidden items-center gap-2 text-[10px] text-[#8b949e] sm:flex">
@@ -686,7 +571,7 @@ export default function SessionPage() {
 
       <div className="hidden h-[calc(100dvh-7rem)] min-h-0 sm:flex">
 
-        <aside className="flex w-[270px] shrink-0 flex-col border-r border-[#30363d] bg-[#0d1117] lg:w-[300px]">
+        <aside className="flex w-[340px] shrink-0 flex-col border-r border-[#30363d] bg-[#0d1117]">
 
           <div className="overflow-y-auto p-5">
 
@@ -701,33 +586,6 @@ export default function SessionPage() {
             <p className="mt-4 text-xs leading-5 text-[#8b949e]">
               {scenario.description}
             </p>
-
-            <div className="mt-8">
-              <TaskProgress
-                key={`desktop-${progressRefreshKey}`}
-                sessionId={sessionId}
-                tasks={scenario.tasks}
-                compactTaskLabels
-                onProgressChange={
-                  handleProgressChange
-                }
-                resetting={resetting}
-              />
-            </div>
-
-            <div className="mt-8">
-              <AlexTeammate
-                emotion={
-                  alexReaction?.emotion ||
-                  "neutral"
-                }
-                name="Alex"
-                message={
-                  alexReaction?.message ||
-                  ""
-                }
-              />
-            </div>
 
           </div>
 
@@ -784,36 +642,6 @@ export default function SessionPage() {
           <p className="mt-2 line-clamp-2 text-[9px] leading-4 text-[#8b949e]">
             {scenario.description}
           </p>
-
-          <div className="mt-3">
-            <TaskProgress
-              key={`mobile-${progressRefreshKey}`}
-              sessionId={sessionId}
-              tasks={scenario.tasks}
-              compact
-              onProgressChange={
-                handleProgressChange
-              }
-              resetting={resetting}
-            />
-          </div>
-
-          {alexReaction &&
-            !resetting && (
-              <div className="mt-3">
-                <AlexTeammate
-                  emotion={
-                    alexReaction.emotion ||
-                    "neutral"
-                  }
-                  name="Alex"
-                  message={
-                    alexReaction.message ||
-                    ""
-                  }
-                />
-              </div>
-            )}
 
         </section>
 
@@ -875,65 +703,66 @@ export default function SessionPage() {
 
       <footer className="flex h-14 shrink-0 items-center justify-between border-t border-[#30363d] bg-[#0d1117] px-3 sm:px-5">
 
+        {/* HINTS */}
+
         <div className="relative flex items-center gap-2">
 
-          {hints
-            .map((hint, index) => (
-              <div
-                key={index}
-                className="relative"
+          {hints.map((hint, index) => (
+            <div
+              key={index}
+              className="relative"
+            >
+
+              <button
+                type="button"
+                disabled={resetting}
+                onClick={() =>
+                  toggleHint(index)
+                }
+                className={`rounded-md border px-3 py-2 text-[10px] transition sm:text-xs ${
+                  activeHint === index
+                    ? "border-[#58a6ff] bg-[#161b22] text-white"
+                    : "border-[#30363d] bg-[#161b22] text-[#c9d1d9] hover:bg-[#21262d]"
+                } disabled:cursor-not-allowed disabled:opacity-50`}
               >
+                💡 Hint {index + 1}
+              </button>
 
-                <button
-                  type="button"
-                  disabled={resetting}
-                  onClick={() =>
-                    toggleHint(index)
-                  }
-                  className={`rounded-md border px-3 py-2 text-[10px] transition sm:text-xs ${
-                    activeHint === index
-                      ? "border-[#58a6ff] bg-[#161b22] text-white"
-                      : "border-[#30363d] bg-[#161b22] text-[#c9d1d9] hover:bg-[#21262d]"
-                  } disabled:cursor-not-allowed disabled:opacity-50`}
-                >
-                  💡 Hint {index + 1}
-                </button>
+              {activeHint === index &&
+                !resetting && (
+                  <div className="absolute bottom-12 left-0 z-40 w-64 rounded-lg border border-[#30363d] bg-[#161b22] p-3 shadow-xl sm:w-72">
 
-                {activeHint === index &&
-                  !resetting && (
-                    <div className="absolute bottom-12 left-0 z-40 w-64 rounded-lg border border-[#30363d] bg-[#161b22] p-3 shadow-xl sm:w-72">
+                    <div className="mb-2 flex items-center justify-between">
 
-                      <div className="mb-2 flex items-center justify-between">
+                      <span className="text-[10px] font-semibold uppercase tracking-wide text-[#58a6ff]">
+                        Hint {index + 1}
+                      </span>
 
-                        <span className="text-[10px] font-semibold uppercase tracking-wide text-[#58a6ff]">
-                          Hint {index + 1}
-                        </span>
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setActiveHint(
-                              null
-                            )
-                          }
-                          className="text-xs text-[#8b949e] hover:text-white"
-                        >
-                          ×
-                        </button>
-
-                      </div>
-
-                      <p className="text-xs leading-5 text-[#c9d1d9]">
-                        {hint}
-                      </p>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setActiveHint(null)
+                        }
+                        className="text-xs text-[#8b949e] hover:text-white"
+                      >
+                        ×
+                      </button>
 
                     </div>
-                  )}
 
-              </div>
-            ))}
+                    <p className="text-xs leading-5 text-[#c9d1d9]">
+                      {hint}
+                    </p>
+
+                  </div>
+                )}
+
+            </div>
+          ))}
 
         </div>
+
+        {/* ACTIONS */}
 
         <div className="flex items-center gap-2">
 

@@ -1,16 +1,43 @@
 #!/bin/bash
 
+set -e
+
 cd /workspace
 
-# Completely restore the workspace to its initial state
+# =========================================
+# FRESH SCENARIO STATE
+# =========================================
+
 find /workspace -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
 
-# Configure Git identity
+# =========================================
+# GIT IDENTITY
+# =========================================
+
 git config --global user.name "Student"
 git config --global user.email "student@example.com"
 
-echo "Your task:"
-echo "1. Initialize a Git repository"
-echo "2. Create README.md"
-echo "3. Add it to Git"
-echo "4. Create your first commit"
+# =========================================
+# LEARNER STARTING STATE
+# =========================================
+
+echo ""
+echo "========================================="
+echo "PROJECT SETUP"
+echo "========================================="
+echo ""
+echo "The project is ready, but Git has not"
+echo "been initialized yet."
+echo ""
+echo "Prepare this repository for version control."
+echo ""
+echo "Your goal:"
+echo ""
+echo "  • Initialize Git"
+echo "  • Create README.md"
+echo "  • Stage README.md"
+echo "  • Create the first commit"
+echo ""
+echo "Use the terminal to complete the setup."
+echo "========================================="
+echo ""

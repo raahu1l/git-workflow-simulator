@@ -9,7 +9,6 @@ cd /workspace
 # =========================================
 
 rm -rf .git
-rm -rf .scenario-state
 
 git init -b main
 
@@ -18,7 +17,6 @@ git config user.email "student@example.com"
 git config core.editor "true"
 
 mkdir -p src
-mkdir -p .scenario-state
 
 # =========================================
 # INITIAL PROJECT
@@ -72,7 +70,7 @@ git add .
 git commit -m "Add signup validation"
 
 # =========================================
-# MERGE OLD SIGNUP INTO MAIN
+# MERGE SIGNUP INTO MAIN
 # =========================================
 
 git switch main
@@ -81,17 +79,13 @@ git merge --no-ff feature/old-signup \
   -m "Merge old signup feature"
 
 # =========================================
-# BASELINE MAIN
+# RECORD MAIN BASELINE
 # =========================================
-#
-# This tag records the exact main state
-# before the learner begins cleanup.
-#
 
 git tag scenario-main-baseline
 
 # =========================================
-# ACTIVE BUG-FIX BRANCH
+# ACTIVE LOGIN BUG-FIX BRANCH
 # =========================================
 
 git switch -c fix-bug
@@ -125,22 +119,27 @@ git commit -m "Improve login error handling"
 git tag scenario-fix-bug-baseline
 
 # =========================================
-# START LEARNER HERE
+# LEARNER STARTING POINT
 # =========================================
 
 git switch fix-bug
 
 echo ""
 echo "========================================="
-echo "Repository prepared successfully."
-echo ""
-echo "Current branch: fix-bug"
-echo ""
-echo "Release preparation is underway."
-echo "Your active login fix needs a clearer"
-echo "branch name, while the old signup branch"
-echo "has already been merged into main."
-echo ""
-echo "Keep the active work safe while cleaning"
-echo "up the repository."
+echo "RELEASE CLEANUP"
 echo "========================================="
+echo ""
+echo "The active login fix is currently on"
+echo "a branch with an unclear name."
+echo ""
+echo "Two commits of active login work must"
+echo "remain safe during the cleanup."
+echo ""
+echo "The old signup feature has already been"
+echo "merged into main, but its old branch"
+echo "is still hanging around."
+echo ""
+echo "Clean up the repository without disturbing"
+echo "the active login work."
+echo "========================================="
+echo ""

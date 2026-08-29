@@ -3,65 +3,39 @@
   "title": "Recovering a Deleted Branch",
   "difficulty": "Intermediate",
   "category": "history-recovery",
-  "description": "A feature branch containing unmerged work was accidentally deleted. Recover the commits, verify the recovered history, and safely restore the work to main.",
+  "description": "A feature branch containing unmerged work was accidentally deleted. Recover the committed work, verify the recovered history, and safely restore it to main.",
   "estimatedTime": "10 min",
-  "tasks": [
-    {
-      "id": "restoreBranch",
-      "label": "Recover the deleted feature/payment-validation branch",
-      "compactLabel": "Recover branch"
-    },
-    {
-      "id": "verifyRecovery",
-      "label": "Switch to the recovered branch and verify both original commits",
-      "compactLabel": "Verify commits"
-    },
-    {
-      "id": "mergeRecovery",
-      "label": "Merge the recovered payment-validation work into main",
-      "compactLabel": "Merge to main"
-    },
-    {
-      "id": "cleanupBranch",
-      "label": "Delete the recovered branch after the work is safely merged",
-      "compactLabel": "Clean up branch"
-    }
+
+  "objective": "Recover the deleted payment-validation work and restore it to main without recreating the commits from scratch.",
+
+  "whatToDo": [
+    "Investigate Git's history to find the commits that belonged to the deleted branch.",
+    "Restore the deleted branch from the recovered commit.",
+    "Inspect the recovered history and confirm the payment-validation work is intact.",
+    "Merge the recovered work into main.",
+    "Remove the temporary recovery branch after the work is safely in main."
   ],
+
   "hints": [
-    "The branch name is gone, but deleting a branch does not immediately delete the commits it pointed to. Think about where Git records previous reference positions.",
-    "Look for the last position of feature/payment-validation. You only need the latest lost commit because its parent contains the earlier payment-validation commit.",
-    "Look at Git's record of recent branch and HEAD movements. Find the last commit that belonged to feature/payment-validation, then use that commit to restore the branch."
+    "Deleting a branch removes the branch name, not necessarily the commits it pointed to. Think about where Git records previous reference positions.",
+    "Look at Git's recent reference and HEAD movements. Find the latest commit that belonged to feature/payment-validation.",
+    "Once you identify that commit, use it to recreate the branch. Then verify its history before merging the recovered work into main."
   ],
+
   "alex": {
     "intro": {
       "emotion": "concerned",
-      "message": "Amit deleted the payment-validation branch before opening the PR. The work was already committed, and the release is getting closer. We need to recover the work without recreating it from scratch."
+      "message": "Amit deleted the payment-validation branch before opening the PR. The work was already committed, and the release is getting closer. Let's see if we can recover it without recreating anything."
     },
-    "situations": {
-      "restoreBranch": {
-        "emotion": "thinking",
-        "message": "The branch name is gone, but that doesn't necessarily mean the commits are gone. Think about where Git keeps track of previous reference positions."
-      },
-      "verifyRecovery": {
-        "emotion": "hopeful",
-        "message": "The branch is back. Before we trust the recovery, switch to it and inspect the history. We need to know that both original payment-validation commits survived."
-      },
-      "mergeRecovery": {
-        "emotion": "happy",
-        "message": "The original work is safely recovered and verified. Now bring it back into main so the team can continue."
-      },
-      "cleanupBranch": {
-        "emotion": "celebrating",
-        "message": "The recovered work is safely in main. Clean up the temporary recovery branch so the repository is back in good shape."
-      }
-    },
+
     "success": {
       "emotion": "celebrating",
-      "message": "Oh thank god. Seriously, thank you — I thought that work was gone for good."
+      "message": "Oh thank god. The original work is back in main and the temporary recovery branch is cleaned up. Nice recovery."
     },
+
     "failure": {
       "emotion": "concerned",
-      "message": "The recovery isn't complete yet. Make sure the original branch was recovered, its history was checked, the work was merged into main, and the temporary branch was cleaned up."
+      "message": "We're not there yet. Check the repository state carefully: the original payment-validation commits need to be recovered, verified, brought into main, and the temporary recovery branch should be removed."
     }
   }
 }

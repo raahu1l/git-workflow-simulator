@@ -72,7 +72,7 @@ git add .
 git commit -m "Add product search service"
 
 # =========================================
-# RETURN TO MAIN
+# MAIN CONTINUES SEPARATELY
 # =========================================
 
 git switch main
@@ -95,18 +95,23 @@ git add .
 git commit -m "Add application configuration"
 
 # =========================================
-# START LEARNER ON FEATURE BRANCH
+# LEARNER STARTING POINT
 # =========================================
 
 git switch feature/search
 
 echo ""
 echo "========================================="
-echo "Repository prepared successfully."
-echo ""
-echo "Current branch: feature/search"
-echo ""
-echo "The search feature has been completed."
-echo "Move the feature into main and finish"
-echo "the collaboration workflow."
+echo "SEARCH FEATURE READY"
 echo "========================================="
+echo ""
+echo "The search feature has been completed"
+echo "and committed on feature/search."
+echo ""
+echo "Meanwhile, main has continued to move"
+echo "forward with deployment work."
+echo ""
+echo "Integrate the completed feature into main"
+echo "and finish the repository cleanly."
+echo "========================================="
+echo ""
