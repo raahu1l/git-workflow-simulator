@@ -6,23 +6,18 @@
   "description": "Safely undo a breaking commit on shared main without rewriting history.",
   "estimatedTime": "7 min",
 
-  "tasks": [
-    {
-      "id": "revertBadCommit",
-      "label": "Revert the breaking commit with a new commit",
-      "compactLabel": "Revert commit"
-    },
-    {
-      "id": "verifyRecovery",
-      "label": "Verify the original commit remains and the final state is restored",
-      "compactLabel": "Verify recovery"
-    }
-  ],
+  "objective": "Safely reverse the breaking change on shared main while preserving the original commit in history and restoring the application to its previous working state.",
+
+  "whatToDo": [
+  "Undo the breaking commit safely.",
+  "Keep the original commit in history.",
+  "Leave main clean and working."
+],
 
   "hints": [
-    "Start by inspecting the recent commit history and the changes introduced by the latest commit. Identify which commit caused the problem.",
-    "Because main is shared, the original commit should remain in history. Think about the Git operation designed to reverse a commit without removing it.",
-    "After undoing the breaking change, verify both sides of the recovery: the original commit is still part of main's history and the final application state matches what it was before the break."
+    "Inspect the recent commit history and the changes introduced by the latest commit. Identify which commit caused the problem.",
+    "Because main is shared, the original commit should remain in history. Think about the Git operation designed to reverse a commit while preserving its history.",
+    "After reversing the change, verify that the original commit is still in main's history and that the application has returned to its previous working state."
   ],
 
   "alex": {
@@ -36,6 +31,7 @@
         "emotion": "happy",
         "message": "Good. The breaking change has been reversed with a new commit. Now make sure the original history is still intact and the working state is clean."
       },
+
       "verifyRecovery": {
         "emotion": "celebrating",
         "message": "Exactly. The original commit is still in history, the change was safely reversed, and main is back to the working state."
