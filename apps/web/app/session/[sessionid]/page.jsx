@@ -2,12 +2,14 @@
 
 import {
   useEffect,
+  useRef,
   useState,
 } from "react";
 
 import { useParams } from "next/navigation";
 
 import Terminal from "@/src/components/Terminal";
+import AlexTeammate from "@/src/components/alex/AlexTeammate";
 import SessionIntro from "@/src/components/SessionIntro";
 
 export default function SessionPage() {
@@ -33,6 +35,15 @@ export default function SessionPage() {
 
   const [checking, setChecking] =
     useState(false);
+
+  const [alexReaction, setAlexReaction] =
+    useState(null);
+
+  const [announcedMilestones, setAnnouncedMilestones] =
+    useState({});
+
+  const previousProgressRef =
+    useRef(null);
 
   const [activeHint, setActiveHint] =
     useState(null);
@@ -186,6 +197,146 @@ export default function SessionPage() {
   }, [sessionId]);
 
   /* =====================================================
+     AUTOMATIC ALEX MILESTONE CHECK
+  ====================================================== */
+  /*
+   * The scenario validator is the source of truth.
+   *
+   * We periodically ask it for the current repository
+   * milestone state. We do NOT use typed commands and we
+   * do NOT show task/progress checkboxes.
+   *
+   * A milestone triggers Alex only once when its verified
+   * state becomes true.
+   */
+  useEffect(() => {
+    if (
+      !sessionId ||
+      !scenario ||
+      sandboxStatus !== "created" ||
+      resetting
+    ) {
+      return;
+    }
+
+    const milestoneDefinitions =
+      scenario.alex?.situations || {};
+
+    const milestoneIds =
+      Object.keys(milestoneDefinitions);
+
+    if (milestoneIds.length === 0) {
+      return;
+    }
+
+    let cancelled = false;
+    let interval = null;
+
+    const checkMilestones = async () => {
+      if (
+        cancelled ||
+        resetting
+      ) {
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `http://localhost:5000/api/sessions/${sessionId}/validate`,
+          {
+            method: "POST",
+            cache: "no-store",
+          }
+        );
+
+        if (!response.ok) {
+          return;
+        }
+
+        const data = await response.json();
+
+        if (
+          cancelled ||
+          resetting ||
+          !data?.progress
+        ) {
+          return;
+        }
+
+        const previousProgress =
+          previousProgressRef.current;
+
+        /*
+         * The first successful check establishes the
+         * starting repository state. We must NOT treat
+         * milestones already true at scenario startup
+         * as newly reached.
+         */
+        if (!previousProgress) {
+          previousProgressRef.current = {
+            ...data.progress,
+          };
+          return;
+        }
+
+        const newlyReached =
+          milestoneIds.find(
+            (milestoneId) =>
+              data.progress[milestoneId] === true &&
+              previousProgress[milestoneId] !== true &&
+              !announcedMilestones[milestoneId] &&
+              milestoneDefinitions[milestoneId]
+          );
+
+        previousProgressRef.current = {
+          ...data.progress,
+        };
+
+        if (newlyReached) {
+          const reaction =
+            milestoneDefinitions[newlyReached];
+
+          setAlexReaction({
+            id: newlyReached,
+            ...reaction,
+          });
+
+          setAnnouncedMilestones((current) => ({
+            ...current,
+            [newlyReached]: true,
+          }));
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.warn(
+            "Automatic milestone check unavailable."
+          );
+        }
+      }
+    };
+
+    checkMilestones();
+
+    interval = setInterval(
+      checkMilestones,
+      1000
+    );
+
+    return () => {
+      cancelled = true;
+
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [
+    sessionId,
+    scenario,
+    sandboxStatus,
+    resetting,
+  ]);
+
+  /* =====================================================
      RESET / RETRY / RESTART SCENARIO
   ====================================================== */
 
@@ -207,6 +358,9 @@ export default function SessionPage() {
 
     setValidation(null);
     setActiveHint(null);
+    setAlexReaction(null);
+    setAnnouncedMilestones({});
+    previousProgressRef.current = null;
 
     try {
       /*
@@ -285,6 +439,9 @@ export default function SessionPage() {
     setChecking(true);
     setValidation(null);
     setActiveHint(null);
+    setAlexReaction(null);
+    setAnnouncedMilestones({});
+    previousProgressRef.current = null;
 
     try {
       const response = await fetch(
@@ -313,6 +470,8 @@ export default function SessionPage() {
         await response.json();
 
       setValidation(data);
+
+
     } catch (error) {
       console.error(
         "Validation failed:",
@@ -596,28 +755,30 @@ export default function SessionPage() {
                   className="flex gap-2.5 text-[11px] leading-4 text-[#c9d1d9]"
                 >
                   <span className="mt-[5px] h-1.5 w-1.5 shrink-0 rounded-full bg-[#58a6ff]" />
-                  <span>{item}</span>
+                  <span>
+                    {typeof item === "string" ? item : item.text}
+                  </span>
                 </li>
               ))}
             </ul>
 
           </div>
 
-          {/* ALEX — RESERVED FOR INTERACTIVE REACTIONS */}
+          {/* ALEX — MILESTONE REACTION */}
 
-          <div className="shrink-0 border-t border-[#30363d] p-4 lg:p-5">
+          <div className="shrink-0 border-t border-[#30363d] px-3 pb-3 pt-3 lg:px-4 lg:pb-4 lg:pt-3">
 
-            <div className="rounded-lg border border-[#30363d] bg-[#161b22] p-3">
-
-              <p className="text-[8px] font-semibold uppercase tracking-[0.16em] text-[#8b949e]">
-                Alex
-              </p>
-
-              <p className="mt-1 text-[10px] leading-4 text-[#8b949e]">
-                Your teammate is here when you need them.
-              </p>
-
-            </div>
+            <AlexTeammate
+              emotion={
+                alexReaction?.emotion ||
+                "neutral"
+              }
+              name="Alex"
+              message={
+                alexReaction?.message ||
+                "Your teammate is here when you need them."
+              }
+            />
 
           </div>
 
@@ -697,7 +858,9 @@ export default function SessionPage() {
                     className="flex gap-2 text-[9px] leading-3.5 text-[#c9d1d9]"
                   >
                     <span className="mt-[4px] h-1 w-1 shrink-0 rounded-full bg-[#58a6ff]" />
-                    <span>{item}</span>
+                    <span>
+                    {typeof item === "string" ? item : item.text}
+                  </span>
                   </li>
                 ))}
 
@@ -761,11 +924,17 @@ export default function SessionPage() {
 
             <div className="pb-1 pt-2">
 
-              <div className="rounded-md border border-[#30363d] bg-[#161b22] px-3 py-2">
-                <p className="text-[9px] leading-4 text-[#c9d1d9]">
-                  Interactive reactions will appear here.
-                </p>
-              </div>
+              <AlexTeammate
+                emotion={
+                  alexReaction?.emotion ||
+                  "neutral"
+                }
+                name="Alex"
+                message={
+                  alexReaction?.message ||
+                  "Your teammate is here when you need them."
+                }
+              />
 
             </div>
 
@@ -807,7 +976,7 @@ export default function SessionPage() {
 
         {/* HINTS */}
 
-        <div className="relative flex min-w-0 items-center gap-1.5 overflow-hidden">
+        <div className="relative flex min-w-0 items-center gap-1.5">
 
           {hints.map((hint, index) => (
             <div
