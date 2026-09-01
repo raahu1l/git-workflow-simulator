@@ -4,35 +4,54 @@
   "difficulty": "Beginner",
   "category": "git-foundations",
   "description": "Three independent changes need to be made to a utility file. Keep each logical change in its own commit so the resulting history is easy to review and maintain.",
-
   "estimatedTime": "7 min",
-
   "objective": "Create three separate commits in the correct order, with each commit containing only its corresponding logical change.",
-
   "whatToDo": [
-    "Fix the negative-quantity bug.",
-    "Add the is_even helper function.",
-    "Clean up the name formatting.",
-    "Keep each logical change in its own commit and finish with a clean working tree."
+    {
+      "id": "bugFixCommit",
+      "text": "Fix the negative-quantity bug."
+    },
+    {
+      "id": "helperCommit",
+      "text": "Add the is_even helper function."
+    },
+    {
+      "id": "formattingCommit",
+      "text": "Clean up the name formatting."
+    },
+    {
+      "id": "cleanWorkingTree",
+      "text": "Keep each change separate and finish clean."
+    }
   ],
-
   "hints": [
     "Start by examining utils.py and identify the three independent changes that need to be made.",
     "Treat each change as its own logical unit. Before committing, inspect what has changed so unrelated work does not get included.",
     "The final history should make it easy to understand, review, or revert each change independently."
   ],
-
   "alex": {
     "intro": {
       "emotion": "talking",
       "message": "Sarah wants this history to be easy to review. There are three separate changes waiting in utils.py, and each one should have a clear place in the history."
     },
-
+    "situations": {
+      "bugFixCommit": {
+        "emotion": "happy",
+        "message": "Nice. The bug fix has its own commit."
+      },
+      "helperCommit": {
+        "emotion": "happy",
+        "message": "Good. The helper is separated cleanly from the bug fix."
+      },
+      "formattingCommit": {
+        "emotion": "celebrating",
+        "message": "Perfect. The formatting cleanup has its own boundary too."
+      }
+    },
     "success": {
       "emotion": "celebrating",
       "message": "This is exactly the kind of history I like reviewing. Each change has its own boundary, the order makes sense, and the repository is clean."
     },
-
     "failure": {
       "emotion": "concerned",
       "message": "The history isn't quite right yet. Look at how the changes are grouped and make sure each logical change can stand on its own."

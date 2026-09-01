@@ -2,54 +2,41 @@ module.exports = async ({
   executeCommand,
   containerId,
 }) => {
-  const git = async (command) => {
-    return executeCommand(
+
+  const git = async (command) =>
+    executeCommand(
       containerId,
       `cd /workspace && ${command}`
     );
-  };
 
   // =========================================
-  // MUST FINISH ON MAIN
+  // MILESTONES
   // =========================================
 
   const currentBranch = await git(
     "git branch --show-current"
   );
 
-  if (currentBranch.trim() !== "main") {
-    return {
-      success: false,
-      message:
-        "The search feature must be integrated into main.",
-    };
-  }
-
-  // =========================================
-  // FEATURE BRANCH MUST HAVE BEEN REMOVED
-  // =========================================
+  const progress = {
+    switchToMain:
+      currentBranch.trim() === "main",
+    mergeFeature: false,
+    deleteFeatureBranch: false,
+    cleanWorkingTree: false,
+  };
 
   const featureBranch = await git(
     "git show-ref --verify --quiet refs/heads/feature/search && echo exists || echo missing"
   );
 
-  if (featureBranch.trim() !== "missing") {
-    return {
-      success: false,
-      message:
-        "The feature is integrated, but the temporary feature branch still exists.",
-    };
-  }
+  progress.deleteFeatureBranch =
+    featureBranch.trim() === "missing";
 
-  // =========================================
-  // FEATURE COMMITS MUST EXIST IN HISTORY
-  // =========================================
-
-  const featureCommits = await git(
-    "git log main --format='%H|%s'"
+  const featureHistory = await git(
+    "git log main --format='%H|%s' 2>/dev/null || true"
   );
 
-  const historyLines = featureCommits
+  const historyLines = featureHistory
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter(Boolean);
@@ -71,21 +58,121 @@ module.exports = async ({
     );
 
   if (
-    !normalizationCommit ||
-    !searchServiceCommit
+    normalizationCommit &&
+    searchServiceCommit
+  ) {
+    const normalizationHash =
+      normalizationCommit.split("|")[0];
+
+    const searchServiceHash =
+      searchServiceCommit.split("|")[0];
+
+    const normalizationReachable =
+      await git(
+        `git merge-base --is-ancestor ${normalizationHash} main && echo yes || echo no`
+      );
+
+    const searchServiceReachable =
+      await git(
+        `git merge-base --is-ancestor ${searchServiceHash} main && echo yes || echo no`
+      );
+
+    const searchFiles =
+      await git(
+        "git ls-tree -r --name-only main -- src/search_utils.py src/search_service.py"
+      );
+
+    const files = searchFiles
+      .split(/\r?\n/)
+      .map((file) => file.trim())
+      .filter(Boolean);
+
+    progress.mergeFeature =
+      normalizationReachable.trim() === "yes" &&
+      searchServiceReachable.trim() === "yes" &&
+      files.includes("src/search_utils.py") &&
+      files.includes("src/search_service.py");
+  }
+
+  const statusForProgress = await git(
+    "git status --porcelain --untracked-files=all"
+  );
+
+  progress.cleanWorkingTree =
+    statusForProgress.trim() === "";
+
+  // =========================================
+  // MUST FINISH ON MAIN
+  // =========================================
+
+  if (currentBranch.trim() !== "main") {
+    return {
+      success: false,
+      progress,
+      message:
+        "The search feature must be integrated into main.",
+    };
+  }
+
+  // =========================================
+  // FEATURE BRANCH MUST HAVE BEEN REMOVED
+  // =========================================
+
+  if (featureBranch.trim() !== "missing") {
+    return {
+      success: false,
+      progress,
+      message:
+        "The feature is integrated, but the temporary feature branch still exists.",
+    };
+  }
+
+  // =========================================
+  // FEATURE COMMITS MUST EXIST IN HISTORY
+  // =========================================
+
+  const featureCommits = await git(
+    "git log main --format='%H|%s'"
+  );
+
+  const historyLinesFinal = featureCommits
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const normalizationCommitFinal =
+    historyLinesFinal.find(
+      (line) =>
+        line.endsWith(
+          "|Add search query normalization"
+        )
+    );
+
+  const searchServiceCommitFinal =
+    historyLinesFinal.find(
+      (line) =>
+        line.endsWith(
+          "|Add product search service"
+        )
+    );
+
+  if (
+    !normalizationCommitFinal ||
+    !searchServiceCommitFinal
   ) {
     return {
       success: false,
+      progress,
       message:
         "The completed search feature is not fully present in main's history.",
     };
   }
 
   const normalizationHash =
-    normalizationCommit.split("|")[0];
+    normalizationCommitFinal.split("|")[0];
 
   const searchServiceHash =
-    searchServiceCommit.split("|")[0];
+    searchServiceCommitFinal.split("|")[0];
 
   // =========================================
   // FEATURE COMMITS MUST BE REACHABLE
@@ -107,6 +194,7 @@ module.exports = async ({
   ) {
     return {
       success: false,
+      progress,
       message:
         "The search feature commits are not reachable from main.",
     };
@@ -124,6 +212,7 @@ module.exports = async ({
   if (!featureParent.trim()) {
     return {
       success: false,
+      progress,
       message:
         "The search feature history could not be verified.",
     };
@@ -148,6 +237,7 @@ module.exports = async ({
   ) {
     return {
       success: false,
+      progress,
       message:
         "The search feature files are not present in main.",
     };
@@ -172,6 +262,7 @@ module.exports = async ({
   ) {
     return {
       success: false,
+      progress,
       message:
         "Main's existing deployment work was not preserved during the integration.",
     };
@@ -188,6 +279,7 @@ module.exports = async ({
   if (conflictMarkers.trim() !== "") {
     return {
       success: false,
+      progress,
       message:
         "Conflict markers remain in the workspace.",
     };
@@ -204,6 +296,7 @@ module.exports = async ({
   if (status.trim() !== "") {
     return {
       success: false,
+      progress,
       message:
         "The merge is complete, but the working tree is not clean.",
     };
@@ -215,6 +308,12 @@ module.exports = async ({
 
   return {
     success: true,
+    progress: {
+      switchToMain: true,
+      mergeFeature: true,
+      deleteFeatureBranch: true,
+      cleanWorkingTree: true,
+    },
     message:
       "Merged and confirmed. The search feature is part of main, its history is preserved, the feature branch is cleaned up, and the repository is ready.",
   };

@@ -5,33 +5,53 @@
   "category": "branching-collaboration",
   "description": "Release preparation is underway. Preserve the active login-fix work while cleaning up a stale branch that has already been merged into main.",
   "estimatedTime": "7 min",
-
   "objective": "Rename the active login-fix branch without losing its work, then remove the already-merged signup branch.",
-
   "whatToDo": [
-    "Give the active login-fix branch a clearer name.",
-    "Make sure both login-fix commits remain intact after the rename.",
-    "Remove the old signup branch that has already been merged.",
-    "Leave main unchanged and finish with a clean repository."
+    {
+      "id": "renameBranch",
+      "text": "Give the active login-fix branch a clearer name."
+    },
+    {
+      "id": "verifyWork",
+      "text": "Make sure both login-fix commits remain intact."
+    },
+    {
+      "id": "deleteMergedBranch",
+      "text": "Remove the old signup branch."
+    },
+    {
+      "id": "cleanWorkingTree",
+      "text": "Leave main unchanged and finish clean."
+    }
   ],
-
   "hints": [
-  "There are two kinds of branches here: active work that must be preserved, and old work that has already been merged. First identify which branch contains the unfinished login fixes and give it a clearer name.",
-  "After renaming the active branch, inspect its history. The two login-fix commits should still be attached to the renamed branch — renaming a branch should not change the commits it points to.",
-  "The signup feature was already merged into main before you started. Once you are on main, remove only the old signup branch. Leave the active login-fix branch intact."
-],
-
+    "There are two kinds of branches here: active work that must be preserved, and old work that has already been merged. First identify which branch contains the unfinished login fixes and give it a clearer name.",
+    "After renaming the active branch, inspect its history. The two login-fix commits should still be attached to the renamed branch — renaming a branch should not change the commits it points to.",
+    "The signup feature was already merged into main before you started. Once you are on main, remove only the old signup branch. Leave the active login-fix branch intact."
+  ],
   "alex": {
     "intro": {
       "emotion": "thinking",
       "message": "We're preparing the next release and the branch names are getting messy. The active login fix needs a clearer name, but don't disturb its two commits. The old signup work is already in main, so that stale branch can finally go."
     },
-
+    "situations": {
+      "renameBranch": {
+        "emotion": "talking",
+        "message": "That branch name is much clearer. Now make sure the bug-fix commits are still attached to it."
+      },
+      "verifyWork": {
+        "emotion": "happy",
+        "message": "Good. The active login-fix work is still intact. You can safely move on to the stale branch cleanup."
+      },
+      "deleteMergedBranch": {
+        "emotion": "celebrating",
+        "message": "Nice cleanup. The merged signup branch is gone and the active bug-fix work is still safe."
+      }
+    },
     "success": {
       "emotion": "celebrating",
       "message": "Much cleaner. The active login fix is still completely intact, and the stale signup branch is out of the way. We're ready for the release."
     },
-
     "failure": {
       "emotion": "concerned",
       "message": "Something went wrong with the cleanup. The active login work must remain intact, while only the already-merged signup branch should be removed."

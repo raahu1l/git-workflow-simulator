@@ -4,35 +4,54 @@
   "difficulty": "Beginner",
   "category": "branching-collaboration",
   "description": "The search feature is complete and ready to ship, but it currently lives on its feature branch. Bring it into main cleanly and leave the repository ready for deployment.",
-
   "estimatedTime": "5 min",
-
   "objective": "Integrate the completed search feature into main without losing its history, then clean up the feature branch.",
-
   "whatToDo": [
-    "Bring the completed search feature into main.",
-    "Make sure the feature's commits are part of main's history.",
-    "Remove the feature branch after the merge.",
-    "Finish with a clean working tree."
+    {
+      "id": "switchToMain",
+      "text": "Switch to main before integrating the feature."
+    },
+    {
+      "id": "mergeFeature",
+      "text": "Bring the search feature into main."
+    },
+    {
+      "id": "deleteFeatureBranch",
+      "text": "Remove the feature branch after the merge."
+    },
+    {
+      "id": "cleanWorkingTree",
+      "text": "Finish with a clean working tree."
+    }
   ],
-
   "hints": [
     "The feature is already complete on its own branch. First consider which branch should receive the completed work.",
     "The feature should become part of main's history while preserving the work that was already committed on the feature branch.",
     "Once the integration is complete and verified, the temporary feature branch is no longer needed. Check the final repository state before finishing."
   ],
-
   "alex": {
     "intro": {
       "emotion": "talking",
       "message": "Sarah reviewed the search feature and says it's ready. It's sitting on the feature branch, while main has moved forward with some deployment work. Let's get the feature integrated cleanly before the next deploy."
     },
-
+    "situations": {
+      "switchToMain": {
+        "emotion": "happy",
+        "message": "Good. You're on main now, so the feature has a proper place to be integrated."
+      },
+      "mergeFeature": {
+        "emotion": "celebrating",
+        "message": "Nice. The search feature is now part of main and its history is still intact."
+      },
+      "deleteFeatureBranch": {
+        "emotion": "happy",
+        "message": "Good cleanup. The feature branch has done its job and is no longer needed."
+      }
+    },
     "success": {
       "emotion": "celebrating",
       "message": "Merged and confirmed. The search feature is officially part of main, and the repository is cleaned up and ready for the next deploy."
     },
-
     "failure": {
       "emotion": "concerned",
       "message": "The integration isn't complete yet. Make sure the feature actually made it into main, its history is preserved, and the temporary branch is cleaned up."

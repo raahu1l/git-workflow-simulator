@@ -2,12 +2,12 @@ module.exports = async ({
   executeCommand,
   containerId,
 }) => {
-  const git = async (command) => {
-    return executeCommand(
+
+  const git = async (command) =>
+    executeCommand(
       containerId,
       `cd /workspace && ${command}`
     );
-  };
 
   // =========================================
   // REPOSITORY
@@ -21,6 +21,12 @@ module.exports = async ({
   if (repository.trim() !== "yes") {
     return {
       success: false,
+      progress: {
+        bugFixCommit: false,
+        helperCommit: false,
+        formattingCommit: false,
+        cleanWorkingTree: false,
+      },
       message:
         "The Git repository has not been initialized.",
     };
@@ -39,22 +45,12 @@ module.exports = async ({
     .map((commit) => commit.trim())
     .filter(Boolean);
 
-  /*
-   * Expected history:
-   *
-   * 1. Initial repository state
-   * 2. Bug fix
-   * 3. Helper function
-   * 4. Formatting cleanup
-   */
-
-  if (commits.length !== 4) {
-    return {
-      success: false,
-      message:
-        "The repository should contain the initial commit followed by three separate logical commits.",
-    };
-  }
+  const progress = {
+    bugFixCommit: false,
+    helperCommit: false,
+    formattingCommit: false,
+    cleanWorkingTree: false,
+  };
 
   // =========================================
   // READ FILE FROM A COMMIT
@@ -69,6 +65,116 @@ module.exports = async ({
       return "";
     }
   };
+
+  // =========================================
+  // BUG-FIX MILESTONE
+  // =========================================
+
+  if (commits.length >= 2) {
+    const bugFixFile =
+      await getFileAtCommit(commits[1]);
+
+    progress.bugFixCommit =
+      bugFixFile.includes(
+        "if quantity < 0:"
+      ) &&
+      bugFixFile.includes(
+        'raise ValueError("quantity cannot be negative")'
+      ) &&
+      !bugFixFile.includes(
+        "def is_even(value)"
+      ) &&
+      bugFixFile.includes(
+        "return name.strip()"
+      );
+  }
+
+  // =========================================
+  // HELPER MILESTONE
+  // =========================================
+
+  if (commits.length >= 3) {
+    const helperFile =
+      await getFileAtCommit(commits[2]);
+
+    progress.helperCommit =
+      progress.bugFixCommit &&
+      helperFile.includes(
+        "def is_even(value):"
+      ) &&
+      helperFile.includes(
+        "return value % 2 == 0"
+      ) &&
+      helperFile.includes(
+        "if quantity < 0:"
+      ) &&
+      helperFile.includes(
+        'raise ValueError("quantity cannot be negative")'
+      ) &&
+      helperFile.includes(
+        "return name.strip()"
+      );
+  }
+
+  // =========================================
+  // FORMATTING MILESTONE
+  // =========================================
+
+  if (commits.length >= 4) {
+    const formattingFile =
+      await getFileAtCommit(commits[3]);
+
+    progress.formattingCommit =
+      progress.helperCommit &&
+      formattingFile.includes(
+        "if quantity < 0:"
+      ) &&
+      formattingFile.includes(
+        'raise ValueError("quantity cannot be negative")'
+      ) &&
+      formattingFile.includes(
+        "def is_even(value):"
+      ) &&
+      formattingFile.includes(
+        "return value % 2 == 0"
+      ) &&
+      formattingFile.includes(
+        "return name.strip().title()"
+      );
+  }
+
+  // =========================================
+  // REPOSITORY CLEAN STATE
+  // =========================================
+
+  const status = await git(
+    "git status --porcelain --untracked-files=all"
+  );
+
+  progress.cleanWorkingTree =
+    status.trim() === "";
+
+  // =========================================
+  // COMMIT HISTORY
+  // =========================================
+
+  /*
+   * Expected history:
+   *
+   * 1. Initial repository state
+   * 2. Bug fix
+   * 3. Helper function
+   * 4. Formatting cleanup
+   */
+
+  if (commits.length !== 4) {
+    return {
+      success: false,
+      progress,
+      message:
+        "The repository should contain the initial commit followed by three separate logical commits.",
+    };
+  }
 
   // =========================================
   // INITIAL COMMIT
@@ -90,6 +196,7 @@ module.exports = async ({
   ) {
     return {
       success: false,
+      progress,
       message:
         "The repository does not appear to have the expected initial state.",
     };
@@ -119,6 +226,7 @@ module.exports = async ({
   if (!bugFixCorrect) {
     return {
       success: false,
+      progress,
       message:
         "The first learner commit should contain only the negative-quantity bug fix.",
     };
@@ -151,6 +259,7 @@ module.exports = async ({
   if (!helperCorrect) {
     return {
       success: false,
+      progress,
       message:
         "The second learner commit should add only the is_even helper to the already-fixed file.",
     };
@@ -183,6 +292,7 @@ module.exports = async ({
   if (!formattingCorrect) {
     return {
       success: false,
+      progress,
       message:
         "The third learner commit should contain the name-formatting cleanup.",
     };
@@ -204,7 +314,6 @@ module.exports = async ({
     `git diff ${commits[2]} ${commits[3]} -- utils.py`
   );
 
-  // Bug-fix commit must introduce the bug fix.
   if (
     !bugFixDiff.includes(
       "if quantity < 0:"
@@ -215,12 +324,12 @@ module.exports = async ({
   ) {
     return {
       success: false,
+      progress,
       message:
         "The bug-fix change is not isolated correctly.",
     };
   }
 
-  // Helper commit must introduce the helper.
   if (
     !helperDiff.includes(
       "def is_even(value):"
@@ -231,12 +340,12 @@ module.exports = async ({
   ) {
     return {
       success: false,
+      progress,
       message:
         "The helper-function change is not isolated correctly.",
     };
   }
 
-  // Formatting commit must introduce the formatting change.
   if (
     !formattingDiff.includes(
       "return name.strip().title()"
@@ -244,6 +353,7 @@ module.exports = async ({
   ) {
     return {
       success: false,
+      progress,
       message:
         "The formatting change is not isolated correctly.",
     };
@@ -277,6 +387,7 @@ module.exports = async ({
   if (!finalStateCorrect) {
     return {
       success: false,
+      progress,
       message:
         "The final utils.py does not contain all three required changes.",
     };
@@ -286,13 +397,10 @@ module.exports = async ({
   // CLEAN WORKING TREE
   // =========================================
 
-  const status = await git(
-    "git status --porcelain --untracked-files=all"
-  );
-
   if (status.trim() !== "") {
     return {
       success: false,
+      progress,
       message:
         "The required commits are present, but the working tree is not clean.",
     };
@@ -304,6 +412,12 @@ module.exports = async ({
 
   return {
     success: true,
+    progress: {
+      bugFixCommit: true,
+      helperCommit: true,
+      formattingCommit: true,
+      cleanWorkingTree: true,
+    },
     message:
       "Excellent! The three logical changes are isolated in the correct order and the repository is clean.",
   };

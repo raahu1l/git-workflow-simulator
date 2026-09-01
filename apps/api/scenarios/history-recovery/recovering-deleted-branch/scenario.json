@@ -5,34 +5,61 @@
   "category": "history-recovery",
   "description": "A feature branch containing unmerged work was accidentally deleted. Recover the committed work, verify the recovered history, and safely restore it to main.",
   "estimatedTime": "10 min",
-
   "objective": "Recover the deleted payment-validation work and restore it to main without recreating the commits from scratch.",
-
   "whatToDo": [
-    "Investigate Git's history to find the commits that belonged to the deleted branch.",
-    "Restore the deleted branch from the recovered commit.",
-    "Inspect the recovered history and confirm the payment-validation work is intact.",
-    "Merge the recovered work into main.",
-    "Remove the temporary recovery branch after the work is safely in main."
+    {
+      "id": "restoreBranch",
+      "text": "Restore the deleted payment-validation branch."
+    },
+    {
+      "id": "verifyRecovery",
+      "text": "Verify the recovered commits and payment-validation work."
+    },
+    {
+      "id": "mergeRecovery",
+      "text": "Merge the recovered work into main."
+    },
+    {
+      "id": "cleanupBranch",
+      "text": "Remove the temporary recovery branch."
+    },
+    {
+      "id": "cleanWorkingTree",
+      "text": "Finish with a clean repository."
+    }
   ],
-
   "hints": [
     "Deleting a branch removes the branch name, not necessarily the commits it pointed to. Think about where Git records previous reference positions.",
     "Look at Git's recent reference and HEAD movements. Find the latest commit that belonged to feature/payment-validation.",
     "Once you identify that commit, use it to recreate the branch. Then verify its history before merging the recovered work into main."
   ],
-
   "alex": {
     "intro": {
       "emotion": "concerned",
       "message": "Amit deleted the payment-validation branch before opening the PR. The work was already committed, and the release is getting closer. Let's see if we can recover it without recreating anything."
     },
-
+    "situations": {
+      "restoreBranch": {
+        "emotion": "happy",
+        "message": "Nice. The deleted branch is back. Now let's verify that the original payment-validation history is intact."
+      },
+      "verifyRecovery": {
+        "emotion": "happy",
+        "message": "Good. The recovered commits and payment-validation work are intact. We can safely bring them back into main."
+      },
+      "mergeRecovery": {
+        "emotion": "celebrating",
+        "message": "Great. The recovered work is now part of main without recreating the original commits."
+      },
+      "cleanupBranch": {
+        "emotion": "celebrating",
+        "message": "Perfect. The recovery branch is cleaned up and the recovered work is safely in main."
+      }
+    },
     "success": {
       "emotion": "celebrating",
       "message": "Oh thank god. The original work is back in main and the temporary recovery branch is cleaned up. Nice recovery."
     },
-
     "failure": {
       "emotion": "concerned",
       "message": "We're not there yet. Check the repository state carefully: the original payment-validation commits need to be recovered, verified, brought into main, and the temporary recovery branch should be removed."

@@ -18,23 +18,29 @@ export default function BrowseScenarioLibrary({
   const [searchQuery, setSearchQuery] = useState("");
 
   const filteredScenarios = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
+  const uniqueScenarios = Array.from(
+    new Map(
+      scenarios.map((scenario) => [scenario.id, scenario])
+    ).values()
+  );
 
-    if (!query) {
-      return scenarios;
-    }
+  const query = searchQuery.trim().toLowerCase();
 
-    return scenarios.filter((scenario) => {
-      const categoryName =
-        categoryNames[scenario.category] || scenario.category || "";
+  if (!query) {
+    return uniqueScenarios;
+  }
 
-      return (
-        scenario.title?.toLowerCase().includes(query) ||
-        scenario.description?.toLowerCase().includes(query) ||
-        categoryName.toLowerCase().includes(query)
-      );
-    });
-  }, [scenarios, searchQuery]);
+  return uniqueScenarios.filter((scenario) => {
+    const categoryName =
+      categoryNames[scenario.category] || scenario.category || "";
+
+    return (
+      scenario.title?.toLowerCase().includes(query) ||
+      scenario.description?.toLowerCase().includes(query) ||
+      categoryName.toLowerCase().includes(query)
+    );
+  });
+}, [scenarios, searchQuery]);
 
   return (
     <>

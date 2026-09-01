@@ -5,50 +5,53 @@
   "category": "git-foundations",
   "description": "Make three independent changes and record each one as a separate, meaningful commit.",
   "estimatedTime": "7 min",
-
   "objective": "Create a clean commit history where each logical change to utils.py is recorded separately and in the correct order.",
-
   "whatToDo": [
-    "Record the negative-quantity bug fix as its own commit.",
-    "Add the is_even helper as a separate commit.",
-    "Record the name-formatting cleanup as a separate commit.",
-    "Finish with a clean working tree."
+    {
+      "id": "bugFixCommit",
+      "text": "Record the negative-quantity bug fix as its own commit."
+    },
+    {
+      "id": "helperCommit",
+      "text": "Add the is_even helper as a separate commit."
+    },
+    {
+      "id": "formattingCommit",
+      "text": "Record the name-formatting cleanup as a separate commit."
+    },
+    {
+      "id": "cleanWorkingTree",
+      "text": "Finish with a clean working tree."
+    }
   ],
-
   "hints": [
     "The three changes are described in utils.py. Work through them one at a time, checking the changes you are about to record before moving to the next one.",
     "Each commit should contain only one logical change. Use Git's status and diff information to make sure unrelated changes are not included together.",
     "The final history should show the three changes as separate commits in the same order as the requested work."
   ],
-
   "alex": {
     "intro": {
       "emotion": "talking",
       "message": "Sarah wants this history to be easy to review. There are three small changes to make to utils.py. Keep each change in its own commit."
     },
-
     "situations": {
       "bugFixCommit": {
         "emotion": "happy",
         "message": "Nice. The bug fix has its own commit."
       },
-
       "helperCommit": {
         "emotion": "happy",
         "message": "Good. The new helper is separated cleanly from the previous change."
       },
-
       "formattingCommit": {
         "emotion": "celebrating",
         "message": "Perfect. The formatting cleanup has its own boundary too."
       }
     },
-
     "success": {
       "emotion": "celebrating",
       "message": "This is exactly the kind of history I like reviewing. Clean, easy to follow, and easy to revert if needed."
     },
-
     "failure": {
       "emotion": "concerned",
       "message": "The history isn't quite right yet. Check that each logical change has its own commit and that the commits are in the correct order."
