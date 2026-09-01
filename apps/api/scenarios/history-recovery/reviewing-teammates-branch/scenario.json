@@ -1,0 +1,56 @@
+{
+  "id": "reviewing-teammates-branch",
+  "title": "Reviewing a Teammate's Branch",
+  "difficulty": "Beginner",
+  "category": "branching-collaboration",
+  "description": "Check out a teammate's branch, inspect its changes against main, and return without modifying or merging anything.",
+  "estimatedTime": "7 min",
+  "objective": "Inspect Priya's reporting branch and return to main without changing either branch.",
+  "whatToDo": [
+    {
+      "id": "checkoutBranch",
+      "text": "Check out feature/reporting."
+    },
+    {
+      "id": "inspectChanges",
+      "text": "Inspect its history and changes."
+    },
+    {
+      "id": "returnToMain",
+      "text": "Return to main without changing anything."
+    }
+  ],
+  "hints": [
+    "You can check out another branch just to inspect its work without merging it.",
+    "Compare feature/reporting with main to see the changes introduced by the branch.",
+    "Return to main when your review is complete and leave both branches unchanged."
+  ],
+  "alex": {
+    "intro": {
+      "emotion": "talking",
+      "message": "Tom asked you to review Priya's reporting branch before he approves the pull request. Take a look at the work, but don't merge or modify anything."
+    },
+    "situations": {
+      "checkoutBranch": {
+        "emotion": "happy",
+        "message": "Good. You're on Priya's branch now. Take a look through the work before heading back."
+      },
+      "inspectChanges": {
+        "emotion": "thinking",
+        "message": "Nice. You've inspected the branch changes. That gives us the context we need for the review."
+      },
+      "returnToMain": {
+        "emotion": "celebrating",
+        "message": "Perfect. You're back on main and the review didn't alter either branch."
+      }
+    },
+    "success": {
+      "emotion": "celebrating",
+      "message": "Good overview — that matches the PR description. Thanks for taking the time to actually look through it."
+    },
+    "failure": {
+      "emotion": "concerned",
+      "message": "The review isn't complete yet. Inspect the reporting branch, avoid changing its work, and return to main."
+    }
+  }
+}
