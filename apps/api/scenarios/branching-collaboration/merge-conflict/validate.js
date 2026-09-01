@@ -2,12 +2,76 @@ module.exports = async ({
   executeCommand,
   containerId,
 }) => {
+
   const git = async (command) => {
     return executeCommand(
       containerId,
       `cd /workspace && ${command}`
     );
   };
+
+  // =========================================
+  // MILESTONE STATE
+  // =========================================
+  //
+  // These are repository-state milestones,
+  // not learner/task checkboxes.
+  //
+  // Alex uses these to react when a milestone
+  // becomes true.
+  // =========================================
+
+  const getMilestones = async () => {
+
+    const mergeState = await git(
+      "if [ -f .git/MERGE_HEAD ]; then echo yes; else echo no; fi"
+    );
+
+    const mergeInProgress =
+      mergeState.trim() === "yes";
+
+    const status = await git(
+      "git status --porcelain=v1"
+    );
+
+    const unmergedFiles = status
+      .split(/\r?\n/)
+      .filter((line) =>
+        /^(UU|AA|AU|UA|DD|DU|UD)/.test(
+          line.trim()
+        )
+      );
+
+    const conflictMarkers = await git(
+      "grep -n -E '^(<<<<<<<|=======|>>>>>>>)' README.md 2>/dev/null || true"
+    );
+
+    const conflictsResolved =
+      mergeInProgress &&
+      unmergedFiles.length === 0 &&
+      conflictMarkers.trim() === "";
+
+    const headParents = await git(
+      "git rev-list --parents -n 1 HEAD 2>/dev/null || true"
+    );
+
+    const parents = headParents
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+
+    const mergeCommitExists =
+      parents.length === 3 &&
+      !mergeInProgress;
+
+    return {
+      startMerge: mergeInProgress,
+      resolveConflict: conflictsResolved,
+      completeMerge: mergeCommitExists,
+    };
+  };
+
+  const progress = await getMilestones();
 
   // =========================================
   // 1. MUST FINISH ON MASTER
@@ -20,6 +84,7 @@ module.exports = async ({
   if (currentBranch.trim() !== "master") {
     return {
       success: false,
+      progress,
       message:
         "The merge must be completed on the master branch.",
     };
@@ -49,13 +114,17 @@ module.exports = async ({
   if (!featureLine || !mainLine) {
     return {
       success: false,
+      progress,
       message:
         "The original feature and master commits must both remain in the final history.",
     };
   }
 
-  const featureCommit = featureLine.split("|")[0];
-  const mainCommit = mainLine.split("|")[0];
+  const featureCommit =
+    featureLine.split("|")[0];
+
+  const mainCommit =
+    mainLine.split("|")[0];
 
   // =========================================
   // 3. VERIFY BOTH ORIGINAL COMMITS REACH
@@ -69,6 +138,7 @@ module.exports = async ({
   if (featureReachable.trim() !== "yes") {
     return {
       success: false,
+      progress,
       message:
         "The feature branch work has not been integrated into master.",
     };
@@ -81,6 +151,7 @@ module.exports = async ({
   if (mainReachable.trim() !== "yes") {
     return {
       success: false,
+      progress,
       message:
         "The original master history is not part of the completed merge.",
     };
@@ -102,6 +173,7 @@ module.exports = async ({
   if (parents.length !== 3) {
     return {
       success: false,
+      progress,
       message:
         "The feature has not been completed as a proper merge into master.",
     };
@@ -118,6 +190,7 @@ module.exports = async ({
   if (mergeState.trim() === "yes") {
     return {
       success: false,
+      progress,
       message:
         "A merge is still in progress. Finish resolving the conflict and complete the merge.",
     };
@@ -142,6 +215,7 @@ module.exports = async ({
   if (unmergedFiles.length > 0) {
     return {
       success: false,
+      progress,
       message:
         "README.md still has an unresolved merge conflict.",
     };
@@ -158,6 +232,7 @@ module.exports = async ({
   if (conflictMarkers.trim() !== "") {
     return {
       success: false,
+      progress,
       message:
         "README.md still contains merge conflict markers.",
     };
@@ -172,17 +247,16 @@ module.exports = async ({
     "cat README.md"
   );
 
-  const hasHeader = finalReadme.includes(
-    "# Git Merge Conflict"
-  );
+  const hasHeader =
+    finalReadme.includes(
+      "# Git Merge Conflict"
+    );
 
-  const hasLine1 = finalReadme.includes(
-    "Line 1"
-  );
+  const hasLine1 =
+    finalReadme.includes("Line 1");
 
-  const hasLine3 = finalReadme.includes(
-    "Line 3"
-  );
+  const hasLine3 =
+    finalReadme.includes("Line 3");
 
   const choseFeatureVersion =
     finalReadme.includes(
@@ -203,6 +277,7 @@ module.exports = async ({
   ) {
     return {
       success: false,
+      progress,
       message:
         "README.md does not contain a valid resolution of the conflicting Line 2 change.",
     };
@@ -215,6 +290,7 @@ module.exports = async ({
   if (status.trim() !== "") {
     return {
       success: false,
+      progress,
       message:
         "The merge is complete, but the working tree still contains pending changes.",
     };
@@ -226,6 +302,13 @@ module.exports = async ({
 
   return {
     success: true,
+
+    progress: {
+      startMerge: true,
+      resolveConflict: true,
+      completeMerge: true,
+    },
+
     message:
       "Excellent! The conflict was resolved, both histories were preserved, and the merge was completed cleanly.",
   };

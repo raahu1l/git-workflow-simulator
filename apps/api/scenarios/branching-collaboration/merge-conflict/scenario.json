@@ -9,9 +9,18 @@
   "objective": "Merge the feature into master, resolve the conflict, and leave the repository clean.",
 
 "whatToDo": [
-  "Merge the feature into master.",
-  "Resolve the README conflict.",
-  "Complete the merge and stay clean."
+  {
+    "id": "startMerge",
+    "text": "Merge the feature into master."
+  },
+  {
+    "id": "resolveConflict",
+    "text": "Resolve the README conflict."
+  },
+  {
+    "id": "completeMerge",
+    "text": "Complete the merge and stay clean."
+  }
 ],
 
   "hints": [
