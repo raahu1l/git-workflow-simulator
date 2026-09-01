@@ -2,11 +2,18 @@ module.exports = async ({
   executeCommand,
   containerId,
 }) => {
+
   const git = (command) =>
     executeCommand(
       containerId,
       `cd /workspace && ${command}`
     );
+
+  const progress = {
+    stageFile: false,
+    createCommit: false,
+    cleanWorkingTree: false,
+  };
 
   // =========================================
   // 1. REPOSITORY MUST EXIST
@@ -20,6 +27,7 @@ module.exports = async ({
   if (repository.trim() !== "yes") {
     return {
       success: false,
+      progress,
       message:
         "The Git repository has not been initialized.",
     };
@@ -36,6 +44,7 @@ module.exports = async ({
   if (forgottenFile.trim() !== "yes") {
     return {
       success: false,
+      progress,
       message:
         "The forgotten project file is missing.",
     };
@@ -49,9 +58,13 @@ module.exports = async ({
     "git ls-files --error-unmatch project-notes.txt 2>/dev/null || true"
   );
 
-  if (trackedFile.trim() !== "project-notes.txt") {
+  const isTracked =
+    trackedFile.trim() === "project-notes.txt";
+
+  if (!isTracked) {
     return {
       success: false,
+      progress,
       message:
         "The forgotten file exists, but it is not tracked by Git.",
     };
@@ -71,9 +84,25 @@ module.exports = async ({
       .map((file) => file.trim())
       .includes("project-notes.txt");
 
+  // Stage milestone remains true once the file has
+  // reached committed history.
+  const stagedFile = await git(
+    "git diff --cached --name-only -- project-notes.txt 2>/dev/null || true"
+  );
+
+  const currentlyStaged =
+    stagedFile
+      .split(/\r?\n/)
+      .map((file) => file.trim())
+      .includes("project-notes.txt");
+
+  progress.stageFile =
+    currentlyStaged || fileInHead;
+
   if (!fileInHead) {
     return {
       success: false,
+      progress,
       message:
         "The forgotten file is tracked but has not been committed.",
     };
@@ -82,19 +111,18 @@ module.exports = async ({
   // =========================================
   // 5. A NEW COMMIT MUST EXIST
   // =========================================
-  //
-  // The initial setup has exactly one commit.
-  // The learner must create another commit
-  // containing the forgotten file.
-  //
 
   const commitCount = await git(
     "git rev-list --count HEAD"
   );
 
-  if (Number(commitCount.trim()) < 2) {
+  const hasNewCommit =
+    Number(commitCount.trim()) >= 2;
+
+  if (!hasNewCommit) {
     return {
       success: false,
+      progress,
       message:
         "The forgotten file has not been added in a new commit.",
     };
@@ -115,9 +143,13 @@ module.exports = async ({
       .map((file) => file.trim())
       .includes("project-notes.txt");
 
+  progress.createCommit =
+    hasNewCommit && fileInLatestCommit;
+
   if (!fileInLatestCommit) {
     return {
       success: false,
+      progress,
       message:
         "The latest commit does not contain the forgotten file.",
     };
@@ -131,9 +163,13 @@ module.exports = async ({
     "git status --porcelain --untracked-files=all"
   );
 
+  progress.cleanWorkingTree =
+    status.trim() === "";
+
   if (status.trim() !== "") {
     return {
       success: false,
+      progress,
       message:
         "The repository still contains uncommitted or untracked changes.",
     };
@@ -145,6 +181,11 @@ module.exports = async ({
 
   return {
     success: true,
+    progress: {
+      stageFile: true,
+      createCommit: true,
+      cleanWorkingTree: true,
+    },
     message:
       "Great job! The forgotten file is tracked, committed, and the repository is clean.",
   };

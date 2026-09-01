@@ -2,11 +2,101 @@ module.exports = async ({
   executeCommand,
   containerId,
 }) => {
-  const git = async (command) => {
-    return executeCommand(
+
+  const git = async (command) =>
+    executeCommand(
       containerId,
       `cd /workspace && ${command}`
     );
+
+  // =========================================
+  // MILESTONES
+  // =========================================
+
+  const branchForProgress = await git(
+    "git branch --show-current"
+  );
+
+  const historyForProgress = await git(
+    "git log main --format='%H|%s'"
+  );
+
+  const progressLines = historyForProgress
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const badLineForProgress =
+    progressLines.find(
+      (line) =>
+        line.endsWith(
+          "|Break total formatting"
+        )
+    );
+
+  const revertLineForProgress =
+    progressLines.find(
+      (line) =>
+        line.includes(
+          'Revert "Break total formatting"'
+        )
+    );
+
+  let revertBadCommit = false;
+  let verifyRecovery = false;
+
+  if (
+    branchForProgress.trim() === "main" &&
+    badLineForProgress &&
+    revertLineForProgress
+  ) {
+    const badHashForProgress =
+      badLineForProgress.split("|")[0];
+
+    const revertHashForProgress =
+      revertLineForProgress.split("|")[0];
+
+    const revertFollowsBad =
+      await git(
+        `git merge-base --is-ancestor ${badHashForProgress} ${revertHashForProgress} && echo yes || echo no`
+      );
+
+    revertBadCommit =
+      revertFollowsBad.trim() === "yes";
+
+    if (revertBadCommit) {
+      const originalStillReachable =
+        await git(
+          `git merge-base --is-ancestor ${badHashForProgress} main && echo yes || echo no`
+        );
+
+      const expectedContent =
+        await git(
+          `git show ${badHashForProgress}^:app.py`
+        );
+
+      const currentContent =
+        await git(
+          "git show main:app.py"
+        );
+
+      verifyRecovery =
+        originalStillReachable.trim() ===
+          "yes" &&
+        expectedContent ===
+          currentContent;
+    }
+  }
+
+  const statusForProgress = await git(
+    "git status --porcelain"
+  );
+
+  const progress = {
+    revertBadCommit,
+    verifyRecovery,
+    cleanWorkingTree:
+      statusForProgress.trim() === "",
   };
 
   // =========================================
@@ -20,6 +110,7 @@ module.exports = async ({
   if (branch.trim() !== "main") {
     return {
       success: false,
+      progress,
       message:
         "Finish the recovery on main.",
     };
@@ -59,6 +150,7 @@ module.exports = async ({
   if (!initialLine || !badLine) {
     return {
       success: false,
+      progress,
       message:
         "The original repository history must remain intact.",
     };
@@ -80,10 +172,12 @@ module.exports = async ({
     );
 
   if (
-    badCommitIsBasedOnInitial.trim() !== "yes"
+    badCommitIsBasedOnInitial.trim() !==
+    "yes"
   ) {
     return {
       success: false,
+      progress,
       message:
         "The original commit history has been altered.",
     };
@@ -103,6 +197,7 @@ module.exports = async ({
   if (!revertLine) {
     return {
       success: false,
+      progress,
       message:
         "The breaking commit has not been reverted with a new commit.",
     };
@@ -115,16 +210,17 @@ module.exports = async ({
   // REVERT MUST COME AFTER BAD COMMIT
   // =========================================
 
-  const revertFollowsBadCommit =
+  const revertFollowsBad =
     await git(
       `git merge-base --is-ancestor ${badHash} ${revertHash} && echo yes || echo no`
     );
 
   if (
-    revertFollowsBadCommit.trim() !== "yes"
+    revertFollowsBad.trim() !== "yes"
   ) {
     return {
       success: false,
+      progress,
       message:
         "The revert commit must come after the original breaking commit.",
     };
@@ -144,6 +240,7 @@ module.exports = async ({
   ) {
     return {
       success: false,
+      progress,
       message:
         "The original breaking commit must remain in main's history.",
     };
@@ -166,6 +263,7 @@ module.exports = async ({
   ) {
     return {
       success: false,
+      progress,
       message:
         "The final application state does not match the state before the breaking commit.",
     };
@@ -182,6 +280,7 @@ module.exports = async ({
   if (status.trim() !== "") {
     return {
       success: false,
+      progress,
       message:
         "Finish with a clean working tree.",
     };
@@ -193,6 +292,11 @@ module.exports = async ({
 
   return {
     success: true,
+    progress: {
+      revertBadCommit: true,
+      verifyRecovery: true,
+      cleanWorkingTree: true,
+    },
     message:
       "Build's green again and nobody has to force-pull anything. Exactly the right call.",
   };

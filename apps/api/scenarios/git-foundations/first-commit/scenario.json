@@ -4,34 +4,57 @@
   "difficulty": "Beginner",
   "category": "git-foundations",
   "description": "A new repository needs to be initialized and its first project file committed so the team can start tracking the project.",
-
   "estimatedTime": "5 min",
-
   "objective": "Initialize the repository, create README.md, and make the first Git commit.",
-
   "whatToDo": [
-    "Initialize a Git repository in /workspace.",
-    "Create a README.md file.",
-    "Stage README.md.",
-    "Create the repository's first commit."
+    {
+      "id": "initializeRepository",
+      "text": "Initialize a Git repository in /workspace."
+    },
+    {
+      "id": "createFile",
+      "text": "Create a README.md file."
+    },
+    {
+      "id": "stageFile",
+      "text": "Stage README.md."
+    },
+    {
+      "id": "createCommit",
+      "text": "Create the repository's first commit."
+    }
   ],
-
   "hints": [
     "Start by initializing Git in the /workspace directory.",
     "Create README.md, then use Git to stage the file and commit it."
   ],
-
   "alex": {
     "intro": {
       "emotion": "talking",
       "message": "Hey! I was setting up this project and got pulled away before I could finish the repository setup. Can you get the project ready for version control?"
     },
-
+    "situations": {
+      "initializeRepository": {
+        "emotion": "happy",
+        "message": "Nice. Git is initialized and the repository is ready to start tracking the project."
+      },
+      "createFile": {
+        "emotion": "thinking",
+        "message": "Good. README.md is in place. Now let's get it into Git."
+      },
+      "stageFile": {
+        "emotion": "happy",
+        "message": "Nice. README.md is staged and ready for the first commit."
+      },
+      "createCommit": {
+        "emotion": "celebrating",
+        "message": "There it is! The first commit is in and the repository is ready to go."
+      }
+    },
     "success": {
       "emotion": "celebrating",
       "message": "Nice! The repository is initialized, README.md is tracked, and the first commit is in. We're ready to start building."
     },
-
     "failure": {
       "emotion": "concerned",
       "message": "We're not quite ready yet. Make sure README.md is actually committed and the repository is left in a clean final state."
