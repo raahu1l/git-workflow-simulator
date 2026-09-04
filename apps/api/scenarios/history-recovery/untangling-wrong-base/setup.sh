@@ -8,6 +8,7 @@ rm -rf .git src README.md deploy.md
 git init -b main
 git config user.name "Student"
 git config user.email "student@example.com"
+git config core.editor true
 
 mkdir -p src
 
