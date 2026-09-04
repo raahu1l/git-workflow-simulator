@@ -1,0 +1,47 @@
+{
+  "id": "untangling-wrong-base",
+  "title": "Untangling a Branch From the Wrong Base",
+  "difficulty": "Intermediate",
+  "category": "history-recovery",
+  "description": "Amit's reporting branch was created before main moved forward, so unrelated main changes now appear in its diff.",
+  "estimatedTime": "8 min",
+  "objective": "Bring feature/reporting up to date with main while keeping its reporting work intact.",
+  "whatToDo": [
+    {
+      "id": "inspectBase",
+      "text": "Find where feature/reporting split from main."
+    },
+    {
+      "id": "updateBranch",
+      "text": "Bring feature/reporting up to the current main."
+    },
+    {
+      "id": "verifyCleanDiff",
+      "text": "Verify that only the reporting changes remain."
+    }
+  ],
+  "hints": [
+    "Compare the commit history of feature/reporting and main to see where they diverged.",
+    "Update feature/reporting from main, then check the final diff."
+  ],
+  "alex": {
+    "intro": {
+      "emotion": "thinking",
+      "message": "Amit's reporting branch was created before main moved forward. First, figure out where the two branches diverged."
+    },
+    "situations": {
+      "updateBranch": {
+        "emotion": "happy",
+        "message": "Good. The reporting branch now includes the current main history and Amit's reporting work is still intact."
+      }
+    },
+    "success": {
+      "emotion": "celebrating",
+      "message": "That explains it — diff looks clean now. Appreciate you digging into what actually happened instead of just guessing."
+    },
+    "failure": {
+      "emotion": "concerned",
+      "message": "The branch isn't in the expected final state. Update it from current main, preserve both reporting commits, and make sure only the reporting changes remain."
+    }
+  }
+}
