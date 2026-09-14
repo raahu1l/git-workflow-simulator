@@ -1,0 +1,47 @@
+{
+  "id": "splitting-commit",
+  "title": "Splitting a Commit That Did Too Much",
+  "difficulty": "Advanced",
+  "category": "advanced-workflows",
+  "description": "Tom needs one mixed commit split into separate bug-fix and feature commits for a cleaner changelog.",
+  "estimatedTime": "7 min",
+  "objective": "Split the mixed commit into two clean commits without changing the final project content.",
+  "whatToDo": [
+  {
+    "id": "findMixedCommit",
+    "text": "Inspect the branch history and find the commit containing both changes."
+  },
+  {
+    "id": "splitCommit",
+    "text": "Split that commit into a bug-fix commit and a feature commit."
+  },
+  {
+    "id": "preserveHistory",
+    "text": "Keep the other commits and final project content unchanged."
+  }
+],
+  "hints": [
+    "Use interactive rebase to stop at the mixed commit, then reset that commit while keeping its changes in your working tree.",
+    "Stage and commit the bug fix and new feature separately, then continue the rebase."
+  ],
+  "alex": {
+    "intro": {
+      "emotion": "thinking",
+      "message": "Tom found a commit that combines a bug fix with a new feature. Let's clean up the history so each change has its own commit."
+    },
+    "situations": {
+      "splitCommit": {
+        "emotion": "happy",
+        "message": "Nice. The mixed work has been separated into its own commits."
+      }
+    },
+    "success": {
+      "emotion": "celebrating",
+      "message": "Perfect, changelog will actually make sense now. Thanks for taking the time to split that properly."
+    },
+    "failure": {
+      "emotion": "concerned",
+      "message": "The history still isn't clean. Split the mixed commit into separate bug-fix and feature commits while preserving the surrounding history and final content."
+    }
+  }
+}
