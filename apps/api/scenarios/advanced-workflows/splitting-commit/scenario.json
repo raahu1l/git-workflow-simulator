@@ -24,24 +24,37 @@
     "Use interactive rebase to stop at the mixed commit, then reset that commit while keeping its changes in your working tree.",
     "Stage and commit the bug fix and new feature separately, then continue the rebase."
   ],
-  "alex": {
-    "intro": {
-      "emotion": "thinking",
-      "message": "Tom found a commit that combines a bug fix with a new feature. Let's clean up the history so each change has its own commit."
+ "alex": {
+  "intro": {
+    "emotion": "thinking",
+    "message": "Tom found a commit that combines a bug fix with a new feature. Let's clean up the history so each change has its own commit."
+  },
+
+  "situations": {
+    "splitBugFix": {
+      "emotion": "talking",
+      "message": "Nice. The bug fix has been separated from the mixed commit."
     },
-    "situations": {
-      "splitCommit": {
-        "emotion": "happy",
-        "message": "Nice. The mixed work has been separated into its own commits."
-      }
+
+    "splitFeature": {
+      "emotion": "happy",
+      "message": "Good. The report export is now isolated in its own commit."
     },
-    "success": {
+
+    "splitCommit": {
       "emotion": "celebrating",
-      "message": "Perfect, changelog will actually make sense now. Thanks for taking the time to split that properly."
-    },
-    "failure": {
-      "emotion": "concerned",
-      "message": "The history still isn't clean. Split the mixed commit into separate bug-fix and feature commits while preserving the surrounding history and final content."
+      "message": "Perfect. The mixed commit has been cleanly split while preserving the surrounding history."
     }
+  },
+
+  "success": {
+    "emotion": "celebrating",
+    "message": "Perfect, changelog will actually make sense now. Thanks for taking the time to split that properly."
+  },
+
+  "failure": {
+    "emotion": "concerned",
+    "message": "The history still isn't clean. Split the mixed commit into separate bug-fix and feature commits while preserving the surrounding history and final content."
   }
+}
 }

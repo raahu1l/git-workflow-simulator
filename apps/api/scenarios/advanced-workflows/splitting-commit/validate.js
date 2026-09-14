@@ -13,9 +13,7 @@ module.exports = async ({
   ).trim();
 
   const baselineMain = (
-    await git(
-      "git rev-parse scenario-main-baseline"
-    )
+    await git("git rev-parse scenario-main-baseline")
   ).trim();
 
   const currentMain = (
@@ -25,15 +23,15 @@ module.exports = async ({
   const mainUnchanged =
     baselineMain === currentMain;
 
-  const featureTip = (
-    await git(
-      "git rev-parse feature/reporting"
-    )
-  ).trim();
-
   const baselineFeature = (
     await git(
       "git rev-parse scenario-feature-baseline"
+    )
+  ).trim();
+
+  const featureTip = (
+    await git(
+      "git rev-parse feature/reporting"
     )
   ).trim();
 
@@ -59,12 +57,14 @@ module.exports = async ({
 
   const validationCommit = commits.find(
     (commit) =>
-      commit.message === "Add report validation"
+      commit.message ===
+      "Add report validation"
   );
 
   const documentationCommit = commits.find(
     (commit) =>
-      commit.message === "Document report workflow"
+      commit.message ===
+      "Document report workflow"
   );
 
   const hasValidationCommit =
@@ -82,67 +82,97 @@ module.exports = async ({
   const mixedCommitRemoved =
     !hasMixedCommit;
 
+  const currentHead = (
+    await git("git rev-parse HEAD")
+  ).trim();
+
+  const headParent = (
+    await git(
+      "git rev-parse HEAD^ 2>/dev/null || true"
+    )
+  ).trim();
+
+  let headDiff = "";
+
+  if (headParent) {
+    headDiff = await git(
+      `git diff ${headParent} ${currentHead} -- src/report.py`
+    );
+  }
+
+  const headHasBugFix =
+    headDiff.includes(
+      'item["price"] * item.get("quantity", 1)'
+    );
+
+  const headHasExport =
+    headDiff.includes(
+      "def export_report"
+    );
+
+  const isDetachedHead =
+    branchName === "";
+
+  const splitBugFix =
+    isDetachedHead &&
+    headHasBugFix &&
+    !headHasExport;
+
+  const splitFeature =
+    isDetachedHead &&
+    headHasExport &&
+    !headHasBugFix;
+
   let rewrittenCommits = [];
 
   if (
     validationCommit &&
     documentationCommit
   ) {
-    const validationIndex = commits.findIndex(
-      (commit) =>
-        commit.hash === validationCommit.hash
+    const rewrittenHistory = await git(
+      `git rev-list --reverse ${validationCommit.hash}..${documentationCommit.hash}^`
     );
 
-    const documentationIndex = commits.findIndex(
-      (commit) =>
-        commit.hash === documentationCommit.hash
-    );
-
-    if (
-      validationIndex >= 0 &&
-      documentationIndex > validationIndex
-    ) {
-      rewrittenCommits = commits.slice(
-        validationIndex + 1,
-        documentationIndex
-      );
-    }
+    rewrittenCommits = rewrittenHistory
+      .split(/\r?\n/)
+      .map((hash) => hash.trim())
+      .filter(Boolean);
   }
 
-  const hasTwoRewrittenCommits =
+  const hasExactlyTwoRewrittenCommits =
     rewrittenCommits.length === 2;
 
-  let bugFixCommit = null;
-  let exportCommit = null;
+  let finalBugFixCommit = "";
+  let finalExportCommit = "";
 
-  for (const commit of rewrittenCommits) {
+  for (const hash of rewrittenCommits) {
     const diff = await git(
-      `git diff-tree --no-commit-id --unified=0 -r ${commit.hash} -- src/report.py`
+      `git diff ${hash}^ ${hash} -- src/report.py`
     );
 
-    if (
+    const hasBugFix =
       diff.includes(
         'item["price"] * item.get("quantity", 1)'
-      ) &&
-      !diff.includes("export_report")
-    ) {
-      bugFixCommit = commit;
+      );
+
+    const hasExport =
+      diff.includes(
+        "def export_report"
+      );
+
+    if (hasBugFix && !hasExport) {
+      finalBugFixCommit = hash;
     }
 
-    if (
-      diff.includes("export_report") &&
-      !diff.includes(
-        'item["price"] * item.get("quantity", 1)'
-      )
-    ) {
-      exportCommit = commit;
+    if (hasExport && !hasBugFix) {
+      finalExportCommit = hash;
     }
   }
 
-  const splitCleanly =
-    hasTwoRewrittenCommits &&
-    !!bugFixCommit &&
-    !!exportCommit;
+  const finalSplitCleanly =
+    hasExactlyTwoRewrittenCommits &&
+    finalBugFixCommit !== "" &&
+    finalExportCommit !== "";
 
   const finalReport = await git(
     "git show feature/reporting:src/report.py"
@@ -173,21 +203,17 @@ module.exports = async ({
   const workingTreeClean =
     finalStatus === "";
 
-  const splitBugFix =
-    mixedCommitRemoved &&
-    !!bugFixCommit;
+  const surroundingCommitsPreserved =
+    hasValidationCommit &&
+    hasDocumentationCommit;
 
-  const splitFeature =
-    splitBugFix &&
-    !!exportCommit;
-
-  const completeSolution =
+  const splitCommit =
+    !isDetachedHead &&
     branchName === "feature/reporting" &&
     mainUnchanged &&
-    hasValidationCommit &&
-    hasDocumentationCommit &&
+    surroundingCommitsPreserved &&
     mixedCommitRemoved &&
-    splitCleanly &&
+    finalSplitCleanly &&
     finalContentUnchanged &&
     workingTreeClean &&
     featureWasRewritten;
@@ -195,9 +221,10 @@ module.exports = async ({
   const progress = {
     splitBugFix,
     splitFeature,
+    splitCommit,
   };
 
-  if (branchName !== "feature/reporting") {
+  if (branchName !== "feature/reporting" && !isDetachedHead) {
     return {
       success: false,
       progress,
@@ -215,7 +242,7 @@ module.exports = async ({
     };
   }
 
-  if (!mixedCommitRemoved) {
+  if (!isDetachedHead && !mixedCommitRemoved) {
     return {
       success: false,
       progress,
@@ -224,16 +251,25 @@ module.exports = async ({
     };
   }
 
-  if (!hasValidationCommit || !hasDocumentationCommit) {
+  if (!isDetachedHead && !hasValidationCommit) {
     return {
       success: false,
       progress,
       message:
-        "Keep the surrounding commits intact while splitting the mixed commit.",
+        "Keep the Add report validation commit intact.",
     };
   }
 
-  if (!hasTwoRewrittenCommits || !splitCleanly) {
+  if (!isDetachedHead && !hasDocumentationCommit) {
+    return {
+      success: false,
+      progress,
+      message:
+        "Keep the Document report workflow commit intact.",
+    };
+  }
+
+  if (!isDetachedHead && !finalSplitCleanly) {
     return {
       success: false,
       progress,
@@ -242,7 +278,7 @@ module.exports = async ({
     };
   }
 
-  if (!finalContentUnchanged) {
+  if (!isDetachedHead && !finalContentUnchanged) {
     return {
       success: false,
       progress,
@@ -251,7 +287,7 @@ module.exports = async ({
     };
   }
 
-  if (!workingTreeClean) {
+  if (!isDetachedHead && !workingTreeClean) {
     return {
       success: false,
       progress,
@@ -260,7 +296,7 @@ module.exports = async ({
     };
   }
 
-  if (!completeSolution) {
+  if (!splitCommit) {
     return {
       success: false,
       progress,
@@ -269,13 +305,14 @@ module.exports = async ({
     };
   }
 
-  return {
-    success: true,
-    progress: {
-      splitBugFix: true,
-      splitFeature: true,
-    },
-    message:
-      "Perfect, changelog will actually make sense now. Thanks for taking the time to split that properly.",
-  };
+return {
+  success: true,
+  progress: {
+    splitBugFix: false,
+    splitFeature: false,
+    splitCommit: true,
+  },
+  message:
+    "Perfect, changelog will actually make sense now. Thanks for taking the time to split that properly.",
+};
 };
