@@ -776,7 +776,7 @@ export default function SessionPage() {
               name="Alex"
               message={
                 alexReaction?.message ||
-                "Your teammate is here when you need them."
+                "Alex will keep you on track."
               }
             />
 
@@ -912,7 +912,7 @@ export default function SessionPage() {
                 </p>
 
                 <p className="mt-0.5 truncate text-[9px] text-[#8b949e]">
-                  Your teammate is here when you need them.
+                  Alex will keep you on track.
                 </p>
               </div>
 
@@ -932,7 +932,7 @@ export default function SessionPage() {
                 name="Alex"
                 message={
                   alexReaction?.message ||
-                  "Your teammate is here when you need them."
+                  "Alex will keep you on track."
                 }
               />
 

@@ -1,0 +1,51 @@
+{
+  "id": "rescuing-rebase",
+  "title": "Rescuing a Rebase Gone Wrong",
+  "difficulty": "medium",
+  "category": "advanced-workflows",
+  "description": "Recover safely from a rebase conflict by aborting or completing the rebase.",
+  "estimatedTime": "7 min",
+  "objective": "Recover from the interrupted rebase and leave the repository in a clean, valid state.",
+  "whatToDo": [
+    {
+      "id": "understandState",
+      "text": "Inspect the repository and understand why the rebase is paused."
+    },
+    {
+      "id": "recoverRebase",
+      "text": "Either safely abort the rebase or resolve the conflict and continue."
+    },
+    {
+      "id": "verifyState",
+      "text": "Leave the repository clean with no rebase in progress."
+    }
+  ],
+  "hints": [
+    "A rebase in progress can always be safely stopped and reversed if you'd rather start over.",
+    "If you want to continue, resolve the conflict, stage the resolved file, and let Git continue the rebase."
+  ],
+  "alex": {
+    "intro": {
+      "emotion": "thinking",
+      "message": "Amit got stuck during a rebase. Don't panic — Git gives you a safe way to back out, or you can resolve the conflict and continue."
+    },
+    "situations": {
+      "resolveConflict": {
+        "emotion": "talking",
+        "message": "Nice. The conflict is resolved and Git has the changes staged. You're ready to continue the rebase."
+      },
+      "abortRebase": {
+        "emotion": "happy",
+        "message": "Good call. The rebase was aborted safely and the branch is back where it started."
+      }
+    },
+    "success": {
+      "emotion": "celebrating",
+      "message": "Good instinct knowing you could always back out safely. Either way, we're in a clean state now."
+    },
+    "failure": {
+      "emotion": "concerned",
+      "message": "The rebase still needs to be recovered. Either abort it safely or resolve the conflict and continue."
+    }
+  }
+}
