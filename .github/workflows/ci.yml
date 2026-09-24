@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+      - run: npm run check:scenarios
+      - run: npm run check:syntax --workspace @git-workflow-simulator/api
+      - run: npm run lint:web
+      - run: npm run build:web
+
+  scenario-setups:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t git-sandbox docker
+      - run: npm run test:scenario-setups

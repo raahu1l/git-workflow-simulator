@@ -1,4 +1,5 @@
 import BrowseScenarioLibrary from "@/src/components/BrowseScenarioLibrary";
+import { apiUrl } from "@/src/lib/api";
 
 type Scenario = {
   id: string;
@@ -33,7 +34,7 @@ const categories = [
 ];
 
 export default async function BrowsePage() {
-  const response = await fetch("http://localhost:5000/api/scenarios", {
+  const response = await fetch(`${apiUrl}/api/scenarios`, {
     cache: "no-store",
   });
 

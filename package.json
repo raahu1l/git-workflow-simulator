@@ -6,6 +6,11 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "echo \"Configure apps later\""
+    "check:scenarios": "node scripts/check-scenarios.js",
+    "test:scenario-setups": "node scripts/test-scenario-setups.js",
+    "lint:web": "npm run lint --workspace web",
+    "build:web": "npm run build --workspace web",
+    "dev:api": "npm run dev --workspace @git-workflow-simulator/api",
+    "dev:web": "npm run dev --workspace web"
   }
 }

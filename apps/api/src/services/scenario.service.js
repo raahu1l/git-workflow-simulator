@@ -1,38 +1,94 @@
 const fs = require("fs");
 const path = require("path");
 
-const scenariosPath = path.join(
-  __dirname,
-  "../../scenarios"
-);
+const {
+  scenariosPath,
+} = require("../config");
+
+const getScenarioEntries = () => {
+  const entries = [];
+
+  for (const category of fs
+    .readdirSync(scenariosPath, {
+      withFileTypes: true,
+    })
+    .filter((entry) => entry.isDirectory())) {
+    const categoryPath = path.join(
+      scenariosPath,
+      category.name
+    );
+
+    for (const scenarioFolder of fs
+      .readdirSync(categoryPath, {
+        withFileTypes: true,
+      })
+      .filter((entry) => entry.isDirectory())) {
+      const directory = path.join(
+        categoryPath,
+        scenarioFolder.name
+      );
+      const file = path.join(
+        directory,
+        "scenario.json"
+      );
+
+      if (!fs.existsSync(file)) {
+        continue;
+      }
+
+      try {
+        const scenario = JSON.parse(
+          fs.readFileSync(file, "utf-8")
+        );
+
+        entries.push({
+          category: category.name,
+          directory,
+          folderName: scenarioFolder.name,
+          scenario,
+        });
+      } catch (error) {
+        console.error(
+          `Unable to load scenario ${file}:`,
+          error.message
+        );
+      }
+    }
+  }
+
+  return entries;
+};
+
+const getEffectiveScenarioIds = (entries) => {
+  const counts = new Map();
+
+  for (const entry of entries) {
+    const id = entry.scenario.id;
+    counts.set(id, (counts.get(id) || 0) + 1);
+  }
+
+  return entries.map((entry) => ({
+    ...entry,
+    id:
+      counts.get(entry.scenario.id) === 1
+        ? entry.scenario.id
+        : entry.folderName,
+  }));
+};
 
 /* =========================================
    FIND SCENARIO DIRECTORY
 ========================================= */
 
 const getScenarioDirectory = (id) => {
-  const categories = fs
-    .readdirSync(scenariosPath, {
-      withFileTypes: true,
-    })
-    .filter((entry) => entry.isDirectory());
+  const entry = getEffectiveScenarioIds(
+    getScenarioEntries()
+  ).find((candidate) =>
+    candidate.id === id ||
+    candidate.scenario.id === id
+  );
 
-  for (const category of categories) {
-    const scenarioDirectory = path.join(
-      scenariosPath,
-      category.name,
-      id
-    );
-
-    if (
-      fs.existsSync(scenarioDirectory) &&
-      fs.statSync(scenarioDirectory).isDirectory()
-    ) {
-      return scenarioDirectory;
-    }
-  }
-
-  return null;
+  return entry?.directory || null;
 };
 
 /* =========================================
@@ -40,64 +96,16 @@ const getScenarioDirectory = (id) => {
 ========================================= */
 
 const getAllScenarios = () => {
-  const categories = fs
-    .readdirSync(scenariosPath, {
-      withFileTypes: true,
-    })
-    .filter((entry) => entry.isDirectory());
-
-  const scenarios = [];
-
-  for (const category of categories) {
-    const categoryPath = path.join(
-      scenariosPath,
-      category.name
-    );
-
-    const scenarioFolders = fs
-      .readdirSync(categoryPath, {
-        withFileTypes: true,
-      })
-      .filter((entry) => entry.isDirectory());
-
-    for (const scenarioFolder of scenarioFolders) {
-      const scenarioDirectory = path.join(
-        categoryPath,
-        scenarioFolder.name
-      );
-
-      const scenarioFile = path.join(
-        scenarioDirectory,
-        "scenario.json"
-      );
-
-      if (!fs.existsSync(scenarioFile)) {
-        continue;
-      }
-
-      const scenarioData = fs.readFileSync(
-        scenarioFile,
-        "utf-8"
-      );
-
-      const scenario = JSON.parse(
-        scenarioData
-      );
-
-      const scenarioStats = fs.statSync(
-        scenarioDirectory
-      );
-
-      scenarios.push({
-        ...scenario,
-        category: category.name,
-        createdAt:
-          scenarioStats.birthtime.toISOString(),
-      });
-    }
-  }
-
-  return scenarios;
+  return getEffectiveScenarioIds(
+    getScenarioEntries()
+  ).map((entry) => ({
+    ...entry.scenario,
+    id: entry.id,
+    category: entry.category,
+    createdAt: fs
+      .statSync(entry.directory)
+      .birthtime.toISOString(),
+  }));
 };
 
 /* =========================================
@@ -105,8 +113,15 @@ const getAllScenarios = () => {
 ========================================= */
 
 const getScenarioById = (id) => {
-  const scenarioDirectory =
-    getScenarioDirectory(id);
+  const entries = getEffectiveScenarioIds(
+    getScenarioEntries()
+  );
+  const entry = entries.find((candidate) =>
+    candidate.id === id ||
+    candidate.scenario.id === id
+  );
+
+  const scenarioDirectory = entry?.directory;
 
   if (!scenarioDirectory) {
     return null;
@@ -126,7 +141,10 @@ const getScenarioById = (id) => {
     "utf-8"
   );
 
-  return JSON.parse(scenarioData);
+  return {
+    ...JSON.parse(scenarioData),
+    id: entry.id,
+  };
 };
 
 /* =========================================

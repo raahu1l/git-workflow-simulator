@@ -1,4 +1,5 @@
 import ScenarioCard from "@/src/components/ScenarioCard";
+import { apiUrl } from "@/src/lib/api";
 
 type Scenario = {
   id: string;
@@ -87,7 +88,7 @@ export default async function CategoryPage({
   }
 
   const response = await fetch(
-    "http://localhost:5000/api/scenarios",
+    `${apiUrl}/api/scenarios`,
     {
       cache: "no-store",
     }

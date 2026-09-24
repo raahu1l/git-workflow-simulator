@@ -17,6 +17,20 @@ const {
 
 const validateSession = async (req, res) => {
   try {
+    if (req.sandbox.status === "starting") {
+      return res.status(409).json({
+        success: false,
+        message: "Scenario is still preparing.",
+      });
+    }
+
+    if (req.sandbox.status === "failed") {
+      return res.status(409).json({
+        success: false,
+        message: "Scenario preparation failed.",
+      });
+    }
+
     const result = await validateScenario(
       req.params.sessionId
     );
@@ -59,6 +73,7 @@ const getSession = (req, res) => {
     sessionId: sandbox.sessionId,
     scenarioId: sandbox.scenarioId,
     status: sandbox.status,
+    accessToken: sandbox.accessToken,
   });
 };
 
@@ -77,6 +92,16 @@ const resetSession = async (req, res) => {
     if (!sandbox) {
       return res.status(404).json({
         message: "Session not found",
+      });
+    }
+
+    if (
+      sandbox.status === "starting" ||
+      !sandbox.containerId
+    ) {
+      return res.status(409).json({
+        success: false,
+        message: "Scenario is not ready to reset.",
       });
     }
 
@@ -154,7 +179,9 @@ const resetSession = async (req, res) => {
       getSandbox(sessionId);
 
     if (sandbox) {
-      sandbox.status = "created";
+      sandbox.status = sandbox.containerId
+        ? "created"
+        : "failed";
     }
 
     res.status(500).json({

@@ -14,14 +14,22 @@ const {
   recordSandboxAction,
 } = require("./services/sandbox.service");
 
+const {
+  maxWebSocketMessageBytes,
+} = require("./config");
+
 const setupWebSocket = (server) => {
-  const wss = new WebSocket.Server({ server });
+  const wss = new WebSocket.Server({
+    server,
+    maxPayload: maxWebSocketMessageBytes,
+  });
 
   wss.on("connection", (ws) => {
     console.log("Client connected");
 
     let terminal = null;
     let terminalSessionId = null;
+    let authorizedSessionId = null;
     let shuttingDown = false;
 
     /*
@@ -217,10 +225,13 @@ const setupWebSocket = (server) => {
 
       const sandbox = getSandbox(sessionId);
 
-      if (!sandbox) {
+      if (
+        !sandbox ||
+        sandbox.status !== "created"
+      ) {
         send({
           type: "error",
-          data: "Session not found.\r\n",
+          data: "Session is not ready.\r\n",
         });
 
         return null;
@@ -357,10 +368,39 @@ const setupWebSocket = (server) => {
 
         if (data.type === "input") {
           if (
-            typeof data.data !== "string"
+            typeof data.data !== "string" ||
+            data.data.length > maxWebSocketMessageBytes
           ) {
             return;
           }
+
+          const sandbox = getSandbox(
+            data.sessionId
+          );
+
+          if (
+            !sandbox ||
+            sandbox.accessToken !== data.token
+          ) {
+            send({
+              type: "error",
+              data: "Invalid session token.\r\n",
+            });
+            return;
+          }
+
+          if (
+            authorizedSessionId &&
+            authorizedSessionId !== data.sessionId
+          ) {
+            send({
+              type: "error",
+              data: "This connection is already bound to another session.\r\n",
+            });
+            return;
+          }
+
+          authorizedSessionId = data.sessionId;
 
           const pty = ensureTerminal(
             data.sessionId
@@ -463,6 +503,21 @@ const setupWebSocket = (server) => {
         ====================================== */
 
         if (data.type === "resize") {
+          const sandbox = getSandbox(
+            data.sessionId
+          );
+
+          if (
+            !sandbox ||
+            sandbox.accessToken !== data.token ||
+            (authorizedSessionId &&
+              authorizedSessionId !== data.sessionId)
+          ) {
+            return;
+          }
+
+          authorizedSessionId = data.sessionId;
+
           const pty = ensureTerminal(
             data.sessionId
           );

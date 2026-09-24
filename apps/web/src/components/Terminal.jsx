@@ -4,8 +4,11 @@ import { useEffect, useRef } from "react";
 
 import "xterm/css/xterm.css";
 
+import { websocketUrl } from "@/src/lib/api";
+
 export default function Terminal({
   sessionId,
+  accessToken,
   resetting = false,
 }) {
   const terminalRef = useRef(null);
@@ -115,6 +118,7 @@ export default function Terminal({
             JSON.stringify({
               type: "resize",
               sessionId,
+              token: accessToken,
               cols: terminal.cols,
               rows: terminal.rows,
             })
@@ -134,7 +138,7 @@ export default function Terminal({
       ========================================== */
 
       socket = new WebSocket(
-        "ws://localhost:5000"
+        websocketUrl
       );
 
       socketRef.current = socket;
@@ -248,6 +252,7 @@ export default function Terminal({
               JSON.stringify({
                 type: "input",
                 sessionId,
+                token: accessToken,
                 data,
               })
             );
@@ -383,7 +388,7 @@ export default function Terminal({
       terminalInstanceRef.current =
         null;
     };
-  }, [sessionId, resetting]);
+  }, [sessionId, accessToken, resetting]);
 
   return (
     <div

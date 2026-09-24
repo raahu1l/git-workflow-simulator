@@ -2,6 +2,10 @@ const crypto = require("crypto");
 
 const { sessions } = require("../store/sessions");
 
+const {
+  sessionTtlMs,
+} = require("../config");
+
 /* =========================================
    CREATE SANDBOX
 ========================================= */
@@ -12,11 +16,12 @@ const createSandbox = (
   status = "created"
 ) => {
   const sessionId = crypto.randomUUID();
+  const accessToken = crypto.randomBytes(32).toString("hex");
 
   const createdAt = new Date();
 
   const expiresAt = new Date(
-    createdAt.getTime() + 30 * 60 * 1000
+    createdAt.getTime() + sessionTtlMs
   );
 
   const sandbox = {
@@ -26,6 +31,7 @@ const createSandbox = (
     createdAt: createdAt.toISOString(),
     expiresAt: expiresAt.toISOString(),
     containerId,
+    accessToken,
 
     /*
      * Generic learner action history.
@@ -147,6 +153,9 @@ const deleteSandbox = (sessionId) => {
   return sandbox;
 };
 
+const getAllSandboxes = () =>
+  Object.values(sessions);
+
 module.exports = {
   createSandbox,
   getSandbox,
@@ -154,4 +163,5 @@ module.exports = {
   recordSandboxAction,
   resetSandbox,
   deleteSandbox,
+  getAllSandboxes,
 };

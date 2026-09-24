@@ -1,6 +1,7 @@
 const {
   createContainer,
   runSetupScript,
+  destroyContainer,
 } = require("./docker.service");
 
 const {
@@ -66,6 +67,7 @@ const startScenarioRunner = async (
         getSandbox(sandbox.sessionId);
 
       if (!currentSandbox) {
+        await destroyContainer(containerId);
         return;
       }
 
@@ -115,6 +117,17 @@ const startScenarioRunner = async (
         sandbox.sessionId,
         "failed"
       );
+
+      const currentSandbox = getSandbox(
+        sandbox.sessionId
+      );
+
+      if (currentSandbox?.containerId) {
+        await destroyContainer(
+          currentSandbox.containerId
+        );
+        currentSandbox.containerId = null;
+      }
     }
   })();
 
