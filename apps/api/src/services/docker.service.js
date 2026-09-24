@@ -1,4 +1,4 @@
-const { exec } = require("child_process");
+const { execFile } = require("child_process");
 const pty = require("node-pty");
 const path = require("path");
 
@@ -11,37 +11,22 @@ const scenariosPath = path.resolve(
   "../../scenarios"
 );
 
-/* =========================================
-   CREATE CONTAINER
-========================================= */
+const {
+  dockerImage,
+} = require("../config");
 
-const createContainer = () => {
-  return new Promise((resolve, reject) => {
-    /*
-     * =========================================
-     * MOUNT SCENARIO DEFINITIONS READ-ONLY
-     * =========================================
-     *
-     * /scenarios is the SAME host directory bind-
-     * mounted into every learner's container.
-     *
-     * It must never be writable from inside a
-     * container: a scenario's setup.sh writing
-     * into it (even under its own folder) would
-     * mutate shared, on-disk state that every other
-     * concurrent session for that scenario also
-     * reads from — breaking session isolation.
-     *
-     * Any per-attempt data a scenario needs to
-     * remember between setup.sh and progress.js /
-     * validate.js must go through the generic
-     * setupOutput channel (see runSetupScript
-     * below), which is inherently per-session.
-     */
-    exec(
-      `docker run -d -v "${scenariosPath}:/scenarios:ro" git-sandbox`,
+const runDocker = (args, options = {}) =>
+  new Promise((resolve, reject) => {
+    execFile(
+      "docker",
+      args,
+      {
+        maxBuffer: 1024 * 1024,
+        ...options,
+      },
       (error, stdout, stderr) => {
         if (error) {
+          error.stderr = stderr;
           return reject(error);
         }
 
@@ -49,6 +34,23 @@ const createContainer = () => {
       }
     );
   });
+
+/* =========================================
+   CREATE CONTAINER
+========================================= */
+
+const createContainer = () => {
+  return runDocker([
+    "run",
+    "-d",
+    "--init",
+    "--cpus=1",
+    "--memory=512m",
+    "--pids-limit=256",
+    "-v",
+    `${scenariosPath}:/scenarios:ro`,
+    dockerImage,
+  ]);
 };
 
 /* =========================================
@@ -59,21 +61,45 @@ const executeCommand = (
   containerId,
   command
 ) => {
-  return new Promise((resolve, reject) => {
-    const escapedCommand =
-      command.replace(/"/g, '\\"');
-
-    exec(
-      `docker exec ${containerId} bash -c "${escapedCommand}"`,
-      (error, stdout, stderr) => {
-        if (error) {
-          return reject(error);
-        }
-
-        resolve(stdout.trim());
-      }
+  if (
+    typeof containerId !== "string" ||
+    !/^[a-f0-9]+$/i.test(containerId)
+  ) {
+    return Promise.reject(
+      new Error("Invalid container ID")
     );
-  });
+  }
+
+  if (typeof command !== "string") {
+    return Promise.reject(
+      new Error("Docker command must be a string")
+    );
+  }
+
+  return runDocker([
+    "exec",
+    containerId,
+    "bash",
+    "-lc",
+    command,
+  ]);
+};
+
+const destroyContainer = async (containerId) => {
+  if (
+    typeof containerId !== "string" ||
+    !/^[a-f0-9]+$/i.test(containerId)
+  ) {
+    return;
+  }
+
+  try {
+    await runDocker(["rm", "-f", containerId]);
+  } catch (error) {
+    console.warn(
+      `Unable to remove container ${containerId}: ${error.message}`
+    );
+  }
 };
 
 /* =========================================
@@ -207,18 +233,27 @@ const startTerminal = (containerId) => {
    * correctly with the current Windows setup.
    */
 
+  if (
+    typeof containerId !== "string" ||
+    !/^[a-f0-9]+$/i.test(containerId)
+  ) {
+    throw new Error("Invalid container ID");
+  }
+
   const command =
     `docker exec -it ${containerId} bash -i`;
 
+  const shell = process.platform === "win32"
+    ? process.env.ComSpec || "cmd.exe"
+    : "/bin/sh";
+
+  const shellArgs = process.platform === "win32"
+    ? ["/d", "/s", "/c", command]
+    : ["-c", command];
+
   const terminal = pty.spawn(
-    process.env.ComSpec ||
-      "C:\\Windows\\System32\\cmd.exe",
-    [
-      "/d",
-      "/s",
-      "/c",
-      command,
-    ],
+    shell,
+    shellArgs,
     {
       name: "xterm-color",
       cols: 120,
@@ -239,5 +274,6 @@ module.exports = {
   executeCommand,
   executeCommands,
   runSetupScript,
+  destroyContainer,
   startTerminal,
 };

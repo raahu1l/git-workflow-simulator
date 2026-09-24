@@ -6,15 +6,21 @@ import {
   useState,
 } from "react";
 
-import { useParams } from "next/navigation";
+import {
+  useParams,
+  useSearchParams,
+} from "next/navigation";
 
 import Terminal from "@/src/components/Terminal";
 import AlexTeammate from "@/src/components/alex/AlexTeammate";
 import SessionIntro from "@/src/components/SessionIntro";
+import { apiUrl } from "@/src/lib/api";
 
 export default function SessionPage() {
   const params = useParams();
   const sessionId = params.sessionid;
+  const searchParams = useSearchParams();
+  const accessToken = searchParams.get("token");
 
   const [scenario, setScenario] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -65,9 +71,12 @@ export default function SessionPage() {
     const loadScenario = async () => {
       try {
         const sessionResponse = await fetch(
-          `http://localhost:5000/api/sessions/${sessionId}`,
+          `${apiUrl}/api/sessions/${sessionId}`,
           {
             cache: "no-store",
+            headers: {
+              "x-session-token": accessToken || "",
+            },
           }
         );
 
@@ -89,7 +98,7 @@ export default function SessionPage() {
         );
 
         const scenarioResponse = await fetch(
-          `http://localhost:5000/api/scenarios/${sessionData.scenarioId}`,
+          `${apiUrl}/api/scenarios/${sessionData.scenarioId}`,
           {
             cache: "no-store",
           }
@@ -128,9 +137,12 @@ export default function SessionPage() {
 
       try {
         const response = await fetch(
-          `http://localhost:5000/api/sessions/${sessionId}`,
+          `${apiUrl}/api/sessions/${sessionId}`,
           {
             cache: "no-store",
+            headers: {
+              "x-session-token": accessToken || "",
+            },
           }
         );
 
@@ -194,7 +206,7 @@ export default function SessionPage() {
         clearInterval(startupInterval);
       }
     };
-  }, [sessionId]);
+  }, [sessionId, accessToken]);
 
   /* =====================================================
      AUTOMATIC ALEX MILESTONE CHECK
@@ -242,10 +254,13 @@ export default function SessionPage() {
 
       try {
         const response = await fetch(
-          `http://localhost:5000/api/sessions/${sessionId}/validate`,
+          `${apiUrl}/api/sessions/${sessionId}/validate`,
           {
             method: "POST",
             cache: "no-store",
+            headers: {
+              "x-session-token": accessToken || "",
+            },
           }
         );
 
@@ -334,6 +349,7 @@ export default function SessionPage() {
     scenario,
     sandboxStatus,
     resetting,
+    accessToken,
   ]);
 
   /* =====================================================
@@ -370,10 +386,13 @@ export default function SessionPage() {
        */
 
       const response = await fetch(
-        `http://localhost:5000/api/sessions/${sessionId}/reset`,
+        `${apiUrl}/api/sessions/${sessionId}/reset`,
         {
           method: "POST",
           cache: "no-store",
+          headers: {
+            "x-session-token": accessToken || "",
+          },
         }
       );
 
@@ -445,9 +464,12 @@ export default function SessionPage() {
 
     try {
       const response = await fetch(
-        `http://localhost:5000/api/sessions/${sessionId}/validate`,
+        `${apiUrl}/api/sessions/${sessionId}/validate`,
         {
           method: "POST",
+          headers: {
+            "x-session-token": accessToken || "",
+          },
         }
       );
 
@@ -572,6 +594,7 @@ export default function SessionPage() {
         <Terminal
           key={`terminal-${terminalRefreshKey}`}
           sessionId={sessionId}
+          accessToken={accessToken}
           resetting={resetting}
         />
       ) : sandboxStatus === "failed" ? (

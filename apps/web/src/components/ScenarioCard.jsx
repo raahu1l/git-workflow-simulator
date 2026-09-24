@@ -2,6 +2,8 @@
 
 import { useRouter } from "next/navigation";
 
+import { apiUrl } from "@/src/lib/api";
+
 const categoryNames = {
   "git-foundations": "Git Foundations",
   "branching-collaboration": "Branching & Collaboration",
@@ -15,7 +17,7 @@ export default function ScenarioCard({ scenario, compact = false }) {
   const startScenario = async () => {
     try {
       const response = await fetch(
-        `http://localhost:5000/api/scenarios/${scenario.id}/start`,
+        `${apiUrl}/api/scenarios/${scenario.id}/start`,
         {
           method: "POST",
         }
@@ -27,7 +29,9 @@ export default function ScenarioCard({ scenario, compact = false }) {
 
       const data = await response.json();
 
-      router.push(`/session/${data.sessionId}`);
+      router.push(
+        `/session/${data.sessionId}?token=${encodeURIComponent(data.accessToken)}`
+      );
     } catch (error) {
       console.error(error);
       alert("Failed to start scenario.");
