@@ -1,0 +1,64 @@
+{
+  "id": "assembling-release-branch",
+  "title": "Assembling a Release Branch",
+  "difficulty": "Advanced",
+  "category": "advanced-workflows",
+  "description": "Elena needs a release branch containing the checkout and notifications features, while keeping the experimental search feature out of the release.",
+  "estimatedTime": "7 min",
+  "objective": "Create a release branch from main, include checkout and notifications, and keep experimental search out of the release.",
+  "whatToDo": [
+    {
+      "id": "createRelease",
+      "text": "Create a new release branch based on main."
+    },
+    {
+      "id": "includeCheckout",
+      "text": "Include the checkout feature in the release branch."
+    },
+    {
+      "id": "includeNotifications",
+      "text": "Include the notifications feature in the release branch."
+    },
+    {
+      "id": "excludeSearch",
+      "text": "Keep the experimental search feature out of the release."
+    }
+  ],
+  "hints": [
+    "Start from main and create a new branch for the release.",
+    "Merge the checkout and notifications feature branches into your release branch.",
+    "Do not merge feature/search-experimental."
+  ],
+  "alex": {
+    "intro": {
+      "emotion": "thinking",
+      "message": "For this release, I need checkout and notifications, but the experimental search feature is not ready yet. Let's assemble the release branch carefully."
+    },
+    "situations": {
+      "createRelease": {
+        "emotion": "talking",
+        "message": "Good. You created a separate release branch from main."
+      },
+      "includeCheckout": {
+        "emotion": "happy",
+        "message": "Nice. The checkout feature is now included."
+      },
+      "includeNotifications": {
+        "emotion": "happy",
+        "message": "Great. Notifications are included too."
+      },
+      "excludeSearch": {
+        "emotion": "celebrating",
+        "message": "Perfect. The release is complete and the experimental search feature stays out."
+      }
+    },
+    "success": {
+      "emotion": "celebrating",
+      "message": "Perfect. The release contains exactly the features we need."
+    },
+    "failure": {
+      "emotion": "concerned",
+      "message": "The release branch is not assembled correctly yet."
+    }
+  }
+}
