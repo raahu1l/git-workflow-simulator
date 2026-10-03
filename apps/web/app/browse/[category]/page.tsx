@@ -268,7 +268,7 @@ export default async function CategoryPage({
       ====================================================== */}
 
       <footer className="border-t border-[#30363d] px-5 py-7 text-center text-[10px] text-[#8b949e] sm:px-8 sm:py-8 sm:text-xs">
-        Git Workflow Simulator · Open Source Git Practice
+        Practice real Git workflows in an open-source learning platform.
       </footer>
 
     </main>

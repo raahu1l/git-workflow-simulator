@@ -234,7 +234,7 @@ export default async function Home() {
 
         {/* Mobile Footer */}
         <footer className="border-t border-[#30363d] px-5 py-6 text-center text-[10px] text-[#8b949e]">
-          Git Workflow Simulator · Open Source Git Practice
+          Practice real Git workflows in an open-source learning platform.
         </footer>
 
       </div>
@@ -342,7 +342,7 @@ export default async function Home() {
 
 
         <footer className="border-t border-[#30363d] px-8 py-8 text-center text-xs text-[#8b949e]">
-          Git Workflow Simulator · Open Source Git Practice
+          Practice real Git workflows in an open-source learning platform.
         </footer>
 
       </div>
@@ -453,7 +453,7 @@ export default async function Home() {
         <footer className="border-t border-[#30363d]">
 
           <div className="mx-auto max-w-7xl px-8 py-7 text-center text-xs text-[#8b949e]">
-            Git Workflow Simulator · Open Source Git Practice
+            Practice real Git workflows in an open-source learning platform.
           </div>
 
         </footer>
