@@ -2,19 +2,20 @@
 
 ## Supported versions
 
-Only the latest default branch is supported. This project runs learner commands inside Docker; do not expose the Docker socket or API directly to untrusted networks without authentication and a reverse proxy.
+This project does not currently publish versioned releases. Security fixes are made against the latest default branch.
 
-## Report a vulnerability
+## Reporting a vulnerability
 
-Do not open a public issue for a security vulnerability. Contact the repository maintainer privately through the security contact listed in the repository profile with:
+Do not report sensitive vulnerabilities in a public issue. Use GitHub's private vulnerability reporting or Security Advisories for this repository if available. Otherwise, contact the maintainer privately through the GitHub profile.
 
-- a description of the issue;
-- affected files or endpoints;
-- reproduction steps;
-- impact and suggested mitigation, if known.
+## What to include
 
-Do not include passwords, tokens, or private learner data in a report.
+Provide a description, affected component, reproduction steps, impact, and relevant logs or screenshots that do not contain secrets.
 
-Please allow time for investigation and a fix before public disclosure.
+## Response
 
-For local deployments, set `CORS_ORIGIN` to the exact web origin, keep `.env` files out of version control, and do not share session URLs while they are active.
+The maintainer will review the report, clarify details when needed, and coordinate a fix or mitigation before public disclosure where practical. No response time is guaranteed.
+
+## Deployment considerations
+
+Learner commands run inside Docker containers. Container isolation is an important control but is not a perfect security boundary. Deployments should restrict Docker access, apply resource and network controls, use HTTPS, set `CORS_ORIGIN` to the exact web origin, and keep session URLs private. Scenario scripts are project-controlled code and should be reviewed before accepting contributions.

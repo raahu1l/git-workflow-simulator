@@ -1,78 +1,210 @@
 # Git Workflow Simulator
 
-Git Workflow Simulator is an open-source practice environment for learning Git through realistic terminal scenarios. Each scenario runs in its own Docker sandbox and is validated by repository state, not by matching typed commands.
+[![CI](https://github.com/raahu1l/git-workflow-simulator/actions/workflows/ci.yml/badge.svg)](https://github.com/raahu1l/git-workflow-simulator/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Source: [github.com/raahu1l/git-workflow-simulator](https://github.com/raahu1l/git-workflow-simulator)
+An open-source Git practice platform where learners perform real Git workflows in isolated terminal environments.
 
-Live app: add the deployed URL here after publishing.
+**[🌐 Live Demo](YOUR_LIVE_DEMO_URL)** · **[📦 Repository](https://github.com/raahu1l/git-workflow-simulator)**
 
-## How it works
+---
+
+## Overview
+
+Git Workflow Simulator helps learners build Git skills through hands-on practice instead of command memorization.
+
+Learners choose a scenario, receive a prepared Git repository, work in a browser terminal, and validate the resulting repository state. Hints, objectives, and Alex reactions provide guidance during the exercise.
+
+The frontend runs in the browser while the Node.js/Express API creates and controls Docker sandbox containers on the server. Learners using a hosted deployment do not need Docker installed locally.
+
+---
+
+## ✨ Features
+
+- 🖥️ Browser-based terminal using xterm.js, WebSocket, and node-pty
+- 🐳 Isolated Docker workspace for each session
+- 📚 Scenario browsing by learning path and difficulty
+- 💡 Objectives and hints during scenarios
+- 🤖 Alex milestone and result reactions
+- ✅ Repository-state validation instead of command matching
+- 🔄 Real Git workflows using actual Git repositories
+- 🧩 Self-contained scenario system for adding new exercises
+
+---
+
+## 📸 Screenshots
+
+Add these screenshots after the hosted version is ready.
+
+### 1. Home / Scenario Library
+
+**Suggested file:** `docs/screenshots/home.png`
+
+Show:
+- Hero section
+- Featured/recent scenarios
+- Learning paths
+- Main navigation
+
+<!-- TODO: Add screenshot -->
+![Git Workflow Simulator home page](docs/screenshots/home.png)
+
+### 2. Scenario Workspace / Browser Terminal
+
+**Suggested file:** `docs/screenshots/scenario-workspace.png`
+
+Show:
+- Scenario title/objective
+- What To Do section
+- Browser terminal
+- Hints/Alex panel if visible
+
+<!-- TODO: Add screenshot -->
+![Git Workflow Simulator scenario workspace](docs/screenshots/scenario-workspace.png)
+
+### 3. Successful Validation
+
+**Suggested file:** `docs/screenshots/validation-success.png`
+
+Show:
+- Completed scenario
+- Successful validation/result
+- Alex success reaction if visible
+
+<!-- TODO: Add screenshot -->
+![Git Workflow Simulator successful validation](docs/screenshots/validation-success.png)
+
+> Optional: Add `docs/screenshots/scenario-library.png` later if you want a dedicated screenshot of the scenario/category browsing experience.
+
+---
+
+## 🏗️ Architecture
 
 ```mermaid
-flowchart LR
-	Browser -->|HTTP + WebSocket| API[Express API]
-	API -->|creates and controls| Docker[Docker sandbox]
-	Docker -->|runs| Setup[setup.sh]
-	API -->|loads| Scenario[scenario.json + validate.js]
-	Scenario -->|returns progress and result| API
+flowchart TD
+    Browser[User Browser]
+    Frontend[Next.js Frontend]
+    API[Node.js / Express API]
+    Scenario[Scenario Files]
+    Docker[Docker Engine]
+    Sandbox[Isolated Sandbox Container]
+    Setup[setup.sh]
+    Workspace[Git Workspace]
+    Validate[validate.js]
+
+    Browser -->|HTTP + WebSocket| Frontend
+    Frontend --> API
+
+    API -->|loads| Scenario
+    API -->|creates and controls| Docker
+
+    Docker -->|runs| Setup
+    Setup --> Workspace
+
+    Browser <-->|Terminal interaction| Sandbox
+    Docker --> Sandbox
+
+    API -->|runs for validation| Validate
+    Validate -->|progress + result| API
+    API -->|result| Browser
 ```
 
-The browser starts a session, the API prepares an isolated container, and the learner works in the container terminal. `validate.js` checks the repository state and returns progress milestones and a final result.
+The browser starts a session through the API. The API prepares an isolated Docker sandbox and runs the scenario setup. The learner then works in the browser terminal. When the solution is checked, `validate.js` evaluates the repository state and returns progress and the final result.
 
-## Requirements
+---
 
-- Node.js 20 or newer
+## 🧩 Scenario System
+
+Every scenario is a self-contained folder with exactly three files:
+
+| File | Responsibility |
+| --- | --- |
+| `scenario.json` | Metadata, objectives, hints, and Alex reactions |
+| `setup.sh` | Creates the learner's initial repository and Git state |
+| `validate.js` | Checks the resulting Git state and returns progress/result data |
+
+---
+
+## 📚 Learning Paths
+
+The repository currently contains scenarios across:
+
+- **Git Foundations**
+- **Branching & Collaboration**
+- **History & Recovery**
+- **Advanced Git Workflows**
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technologies |
+| --- | --- |
+| Frontend | Next.js, React, TypeScript, Tailwind CSS |
+| Backend | Node.js, Express |
+| Terminal | xterm.js, WebSocket, node-pty |
+| Sandbox | Docker, Bash, Git |
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js 20+
 - npm
 - Docker Desktop or Docker Engine
-- Internet access during the Docker image build and scenario setup scripts
 
-## Run locally
+### Install
+
+```bash
+npm ci
+docker build -t git-sandbox docker
+```
+
+Create the environment files:
+
+**Windows PowerShell**
 
 ```powershell
-npm install
-docker build -t git-sandbox docker
 Copy-Item apps\api\.env.example apps\api\.env
 Copy-Item apps\web\.env.example apps\web\.env.local
 ```
 
-Start each service in its own terminal:
+**macOS / Linux**
 
-Terminal 1:
+```bash
+cp apps/api/.env.example apps/api/.env
+cp apps/web/.env.example apps/web/.env.local
+```
 
-```powershell
+### Run locally
+
+Start the API:
+
+```bash
 npm run dev:api
 ```
 
-Terminal 2:
+Start the web application in a separate terminal:
 
-```powershell
+```bash
 npm run dev:web
 ```
 
-Open `http://localhost:3000`.
+Then open:
 
-On macOS/Linux, use `cp` instead of `Copy-Item` and run the same npm commands.
+```text
+http://localhost:3000
+```
 
-The API must be able to run Docker commands. The Docker image must be named `git-sandbox`, unless `DOCKER_IMAGE` is changed in `apps/api/.env`.
+The API needs permission to communicate with Docker. See the environment example files for the available configuration.
 
-## Configuration
+---
 
-API settings are documented in [apps/api/.env.example](apps/api/.env.example):
+## 🧪 Testing
 
-- `PORT`, `HOST`: API bind address.
-- `CORS_ORIGIN`: allowed browser origin. Set this to the deployed web URL; do not leave the permissive default in a public deployment.
-- `DOCKER_IMAGE`: sandbox image name.
-- `SESSION_TTL_MS`: session lifetime in milliseconds.
-- `MAX_WEBSOCKET_MESSAGE_BYTES`: maximum terminal WebSocket message size.
-
-Web settings are documented in [apps/web/.env.example](apps/web/.env.example):
-
-- `NEXT_PUBLIC_API_URL`: public API base URL, without a trailing slash.
-- `NEXT_PUBLIC_WS_URL`: public WebSocket URL, without a trailing slash.
-
-The session access token is passed in the session URL and used for later API and WebSocket requests. Treat session URLs as private until the session expires.
-
-## Checks
+Run the project's available checks:
 
 ```bash
 npm run check:scenarios
@@ -82,33 +214,71 @@ npm run lint:web
 npm run build:web
 ```
 
-`npm run check:scenarios` checks metadata, required files, and validator syntax. `npm run test:scenario-setups` runs every `setup.sh` in a disposable Docker container. The setup test requires the local `git-sandbox` image.
+### What the checks cover
 
-## Architecture
+- `check:scenarios` — checks required scenario files, metadata, IDs, and `validate.js` syntax.
+- `test:scenario-setups` — runs every `setup.sh` in a disposable Docker container.
+- `check:syntax` — checks API JavaScript syntax.
+- `lint:web` — runs frontend linting.
+- `build:web` — verifies the production frontend build.
 
-- `apps/api`: Express API, Docker sandbox lifecycle, WebSocket terminal, and scenario validation.
-- `apps/web`: Next.js interface, scenario library, terminal, and progress reactions.
-- `docker`: reusable sandbox image.
-- `scripts`: repository checks used locally and in CI.
+---
 
-The API keeps sessions in memory. This is suitable for a single-process deployment or local learning, but sessions are lost when the API restarts. Use a reverse proxy that supports WebSocket upgrades and keep Docker access restricted to the API host.
+## 🌐 Deployment
 
-## Deploy on a VM
+A hosted deployment follows this model:
 
-1. Install Node.js 20+, npm, Git, and Docker on the VM.
-2. Clone the repository and run `npm ci`.
-3. Build the sandbox image with `docker build -t git-sandbox docker`.
-4. Configure `apps/api/.env` with the public web origin and `apps/web/.env.local` with the public API and WebSocket URLs.
-5. Run the API with `npm run start --workspace @git-workflow-simulator/api`.
-6. Build the web app with `npm run build:web`, then run it with `npm run start --workspace web`.
-7. Put HTTPS and WebSocket-aware reverse proxying in front of the web and API services.
+```text
+User Browser
+     ↓
+Hosted Frontend
+     ↓
+Hosted Backend
+     ↓
+Docker Engine
+     ↓
+Isolated Scenario Containers
+```
 
-The API process needs permission to communicate with Docker. Do not expose the Docker socket or API directly to the public internet. Use a firewall, HTTPS, a restricted `CORS_ORIGIN`, and an authentication layer before using a public deployment with untrusted users.
+The backend requires Docker on the server to create isolated scenario environments. Learners do not need Docker when using a hosted deployment.
 
-## Contributions
+Configure:
 
-Scenario authoring and contribution instructions are in [CONTRIBUTING.md](CONTRIBUTING.md). Security issues should follow [SECURITY.md](SECURITY.md).
+```text
+CORS_ORIGIN
+NEXT_PUBLIC_API_URL
+NEXT_PUBLIC_WS_URL
+```
 
-## License
+Use HTTPS and a reverse proxy that supports WebSocket upgrades.
 
-MIT. See [LICENSE](LICENSE).
+> **Current limitation:** Sessions are stored in memory and are lost when the API restarts.
+
+> **Security:** Do not expose the Docker socket or the backend API directly to the public internet. See [SECURITY.md](SECURITY.md) for deployment security considerations.
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for local development, scenario creation, testing, and pull request guidelines.
+
+---
+
+## 🔐 Security
+
+For security vulnerabilities and responsible disclosure instructions, see [SECURITY.md](SECURITY.md).
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for the full license text.
+
+---
+
+## 🔗 Links
+
+- 🌐 **Live Demo:** [YOUR_LIVE_DEMO_URL](YOUR_LIVE_DEMO_URL)
+- 🐛 **Issues:** [GitHub Issues](https://github.com/raahu1l/git-workflow-simulator/issues)

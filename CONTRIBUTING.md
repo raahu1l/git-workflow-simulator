@@ -1,41 +1,46 @@
 # Contributing
 
-## Scope
+Thank you for helping improve Git Workflow Simulator. Scenario additions are the preferred contribution; documentation and focused bug fixes are welcome too.
 
-Scenario additions are the preferred contribution. Keep the existing API, web, and Docker architecture unchanged unless a separate issue explicitly requests an architectural change.
+## Before you start
+
+Install Node.js 20+, npm, Git, and Docker. Fork and clone the repository, then run:
+
+```bash
+npm ci
+docker build -t git-sandbox docker
+```
+
+Create local environment files from `apps/api/.env.example` and `apps/web/.env.example`, then run the API and web app in separate terminals with `npm run dev:api` and `npm run dev:web`.
 
 ## Add a scenario
 
-1. Create `apps/api/scenarios/<category>/<scenario-id>/`.
-2. Add `scenario.json`, `setup.sh`, and `validate.js`.
-3. Use a unique kebab-case scenario ID and make the folder name match it.
-4. Start from a clean `/workspace` in `setup.sh`; setup must be repeatable.
-5. Make `validate.js` read repository state and return `success`, `progress`, and `message`; it should not modify the repository.
-6. Define matching `whatToDo` IDs and `alex.situations` keys.
-7. Keep the scenario folder self-contained and do not write generated state into `/scenarios`.
-8. Run `npm run check:scenarios` and `npm run test:scenario-setups`.
+Create `apps/api/scenarios/<category>/<scenario-id>/` with exactly:
 
-Each scenario uses this flow:
+1. `scenario.json`: metadata, `whatToDo`, hints, and Alex reactions.
+2. `setup.sh`: a repeatable script that creates the initial Git repository in `/workspace`.
+3. `validate.js`: a repeatable validator that reads Git state and returns `success`, `progress`, and `message`.
 
-```mermaid
-flowchart TD
-	Folder[scenario folder] --> Check[contract check]
-	Check --> Setup[setup.sh creates /workspace]
-	Setup --> Learner[Learner uses terminal]
-	Learner --> Validate[validate.js reads repository state]
-	Validate --> Progress[progress milestones]
-	Validate --> Result[success or failure]
+Use a unique kebab-case ID and matching folder name. Match `whatToDo[].id` values with `alex.situations` keys. Do not write state into `/scenarios` or modify shared application architecture.
+
+Run:
+
+```bash
+npm run check:scenarios
+npm run test:scenario-setups
 ```
 
-The current repository contains one legacy duplicate metadata ID. The checker reports it as a warning and runtime uses that scenario's folder name to keep IDs unique. New scenarios must not add duplicates.
+The repository currently contains one legacy duplicate metadata ID. The checker reports it as a warning and the runtime uses the folder name to keep exposed IDs unique. New scenarios must not add duplicates.
+
+## Code and documentation changes
+
+- Keep changes focused and consistent with the existing architecture.
+- Do not commit `.env` files, credentials, build output, or `node_modules`.
+- Update documentation when behavior or setup changes.
+- Run the relevant checks before opening a pull request.
 
 ## Pull requests
 
-- Explain the Git skill being taught.
-- Include the commands needed to solve the scenario in the pull request description.
-- Confirm setup, validator syntax, lint, and build checks pass when relevant.
-- Keep unrelated formatting and dependency changes out of the pull request.
+Create a focused branch, explain the Git concept or bug being addressed, and include the checks you ran. For scenario changes, describe the intended learner workflow and the commands needed to complete it. Keep unrelated formatting or dependency changes out of the pull request.
 
-## Code changes
-
-For changes outside scenarios, include a focused reason, a regression test or reproducible check, and the expected local commands. Do not commit `.env` files, credentials, build output, or `node_modules`. Do not modify scenario files as part of an unrelated infrastructure change.
+Maintainers may request revisions for correctness, clarity, accessibility, or consistency with the scenario contract.
