@@ -1,5 +1,6 @@
 import BrowseScenarioLibrary from "@/src/components/BrowseScenarioLibrary";
 import { apiUrl } from "@/src/lib/api";
+import Image from "next/image";
 
 type Scenario = {
   id: string;
@@ -59,9 +60,21 @@ export default async function BrowsePage() {
             href="/"
             className="flex items-center gap-2.5"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[#238636] text-xs font-bold">
-              G
-            </div>
+            <div className="relative h-10 w-10 shrink-0 [perspective:500px]">
+  <div className="absolute inset-0 rounded-2xl bg-purple-600/40 blur-lg" />
+
+  <div className="absolute inset-0 rounded-2xl border border-fuchsia-500 bg-gradient-to-br from-violet-600 to-purple-950 shadow-[5px_7px_12px_rgba(0,0,0,0.6)] [transform:rotateY(-12deg)_rotateX(8deg)_rotateZ(-5deg)]" />
+
+  <div className="absolute inset-[3px] overflow-hidden rounded-[13px] [transform:rotateY(-12deg)_rotateX(8deg)_rotateZ(-5deg)]">
+    <Image
+      src="/git-workflow-simulator-icon.png"
+      alt="Git Workflow Simulator"
+      fill
+      sizes="40px"
+      className="object-contain"
+    />
+  </div>
+</div>
 
             <span className="text-xs font-semibold sm:text-sm">
               Git Workflow Simulator
@@ -72,7 +85,7 @@ export default async function BrowsePage() {
           <div className="hidden items-center gap-1 sm:flex">
 
             <a
-              href="/"
+              href="scenarios"
               className="rounded-md px-3 py-2 text-xs font-medium text-[#8b949e] transition hover:bg-[#161b22] hover:text-white"
             >
               Home
@@ -91,7 +104,7 @@ export default async function BrowsePage() {
           <div className="flex items-center gap-2 sm:hidden">
 
             <a
-              href="/"
+              href="/scenarios"
               className="rounded-md px-2.5 py-1.5 text-[10px] font-medium text-[#8b949e]"
             >
               Home

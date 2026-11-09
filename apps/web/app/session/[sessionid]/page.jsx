@@ -716,9 +716,21 @@ export default function SessionPage() {
             href="/"
             className="flex min-w-0 items-center gap-2"
           >
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#238636] text-[10px] font-bold">
-              G
-            </div>
+            <div className="relative h-10 w-10 shrink-0 [perspective:500px]">
+  <div className="absolute inset-0 rounded-2xl bg-purple-600/40 blur-lg" />
+
+  <div className="absolute inset-0 rounded-2xl border border-fuchsia-500 bg-gradient-to-br from-violet-600 to-purple-950 shadow-[5px_7px_12px_rgba(0,0,0,0.6)] [transform:rotateY(-12deg)_rotateX(8deg)_rotateZ(-5deg)]" />
+
+  <div className="absolute inset-[3px] overflow-hidden rounded-[13px] [transform:rotateY(-12deg)_rotateX(8deg)_rotateZ(-5deg)]">
+    <Image
+      src="/git-workflow-simulator-icon.png"
+      alt="Git Workflow Simulator"
+      fill
+      sizes="40px"
+      className="object-contain"
+    />
+  </div>
+</div>
 
             <span className="truncate text-xs font-semibold sm:text-sm">
               Git Workflow Simulator
