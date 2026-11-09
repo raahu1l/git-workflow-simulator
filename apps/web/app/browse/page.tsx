@@ -85,7 +85,7 @@ export default async function BrowsePage() {
           <div className="hidden items-center gap-1 sm:flex">
 
             <a
-              href="scenarios"
+              href="/scenarios"
               className="rounded-md px-3 py-2 text-xs font-medium text-[#8b949e] transition hover:bg-[#161b22] hover:text-white"
             >
               Home
