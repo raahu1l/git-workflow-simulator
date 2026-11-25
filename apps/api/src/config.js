@@ -27,8 +27,8 @@ module.exports = {
     process.env.MAX_WEBSOCKET_MESSAGE_BYTES,
     64 * 1024
   ),
-  scenariosPath: path.resolve(
-    __dirname,
-    "../scenarios"
-  ),
+  scenariosPath: process.env.SCENARIOS_PATH || path.resolve(
+  __dirname,
+  "../scenarios"
+),
 };

@@ -1,15 +1,12 @@
 const { execFile } = require("child_process");
 const pty = require("node-pty");
-const path = require("path");
-
 const {
   getScenarioDirectory,
 } = require("./scenario.service");
 
-const scenariosPath = path.resolve(
-  __dirname,
-  "../../scenarios"
-);
+const {
+  scenariosPath,
+} = require("../config");
 
 const {
   dockerImage,
